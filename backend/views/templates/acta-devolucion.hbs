@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acta de Devolución</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .textend {
+            text-align: right;
+            font-size: 15px;
+        }
+
+        .textencabezado {
+            text-align: center;
+            font-size: 19px;
+        }
+
+        .tabla {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .tabla,
+        .tabla th,
+        .tabla td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .bordestabla th {
+            background-color: #f2f2f2;
+        }
+
+        .header {
+            width: 100%;
+            height: 10vh;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .footer {
+            width: 100%;
+            height: 10vh;
+            position: absolute;
+            opacity: 0.5;
+            bottom: 0;
+        }
+
+        .fondoContainer {
+            background-image: url("/imgs/marcadeagua.png");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 100%;
+        }
+    </style>
+</head>
+
+<body class="fondoContainer">
+    <header class="header">
+        <img src="/imgs/logo.png" alt="Logo" style="width: 100%">
+    </header>
+
+    <div class="container">
+        <div>
+            <h3 class="textend">Fecha: {{fechaDevolucion}}</h3>
+            <h1 class="textencabezado">ACTA DEVOLUCION DE EQUIPOS</h1>
+            <p style="font-size: 16px;">Con la presente acta se le hace entrega de los siguientes elementos para ser reintegrados en almacén:</p>
+        </div>
+
+        <div class="datos-proyecto">
+            <table class="tabla">
+                <thead>
+                    <tr style="font-size: 16px;">
+                        <th>#</th>
+                        <th>Cantidad</th>
+                        <th>Tipo de Cantidad</th>
+                        <th>Elemento</th>
+                        <th>Marca</th>
+                        <th>Serial</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each productos}}
+                    <tr style="font-size: 14px;">
+                        <td>{{numero}}</td>
+                        <td>{{cantidadDevuelta}}</td>
+                        <td>{{tipoCantidad}}</td>
+                        <td>{{elemento}}</td>
+                        <td>{{marca}}</td>
+                        <td>{{serial}}</td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+
+        <div>
+            <p style="font-size: 16px;"><b>Manifiesto que:</b></p>
+            <ul style="font-size: 16px;">
+                <li>Se verifica la entrega de elementos en buen estado a almacén.</li>
+            </ul>
+        </div>
+
+        <div>
+            <table class="tabla">
+                <thead>
+                    <tr style="font-size: 16px;">
+                        <th>Entregado por:</th>
+                        <th>Cargo:</th>
+                        <th>Recibido por:</th>
+                        <th>Cargo:</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="font-size: 14px;">
+                        <td>{{tecnico.nombre}}</td>
+                        <td>{{tecnico.cargo}}</td>
+                        <td>{{almacenista.nombre}}</td>
+                        <td>{{almacenista.cargo}}</td>
+                    </tr>
+                    <tr style="font-size: 16px;">
+                        <th>Firma:</th>
+                        <th>Cédula:</th>
+                        <th>Firma:</th>
+                        <th>Cédula:</th>
+                    </tr>
+                    <tr style="font-size: 14px;">
+                        <td></td>
+                        <td>{{tecnico.cedula}}</td>
+                        <td></td>
+                        <td>{{almacenista.cedula}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <img src="/imgs/footer.png" alt="Footer" style="width: 100%">
+    </footer>
+</body>
+
+</html>

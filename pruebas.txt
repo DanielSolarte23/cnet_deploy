@@ -1,0 +1,118 @@
+http://localhost:3004/api/stants
+
+{
+  "nombre":"modulo 1"
+}
+
+http://localhost:3004/api/subcategorias
+{
+  "nombre": "Fibra Span 100 12 hilos",
+  "Categoriumid":1
+}
+
+
+http://localhost:3004/api/productos
+
+//Producto sin seriales
+
+{
+  "codigo": "1",
+  "descripcion": "Fibra",
+  "marca": "S",
+  "modelo": "N/A",
+  "color": "N/A",
+  "unidadMedida": "metros",
+  "stock": 15000,
+  "stockMinimo": 500,
+  "fechaIngreso": "2025-04-24T10:00:00.000Z",
+  "estado": "disponible",
+  "notas": "carreto de fibra recien ingresado a bodega.",
+  "StantId": 40,
+  "SubcategoriumId": 1
+}
+
+//Producto con serial unico.
+
+{
+  "codigo": "PROD-001",
+  "descripcion": "Monitor LED 24 pulgadas",
+  "marca": "Samsung",
+  "modelo": "S24F350",
+  "color": "Negro",
+  "unidadMedida": "unidad",
+  "stockMinimo": 3,
+  "estado": "disponible",
+  "notas": "Producto nuevo con garantía de 2 años",
+  "StantId": 1,
+  "SubcategoriumId": 1,
+  "unidades": [
+    {
+      "serial": "S24F350-001",
+      "estado": "nuevo"
+    },
+    {
+      "serial": "S24F350-002",
+      "estado": "nuevo"
+    }
+  ]
+}
+
+
+http://localhost:3004/api/personal
+
+{
+  "nombre":"Kevin",
+  "cedula":"1061813299",
+  "cargo":"tecnico",
+  "departamento":"cauca",
+  "telefono":"3156955885",
+  "correo":"correo@ejemplo.com",
+  "activo":true
+}
+
+http://localhost:3004/api/entregas
+
+{
+  "entrega": {
+    "fecha": "2024-07-20T10:30:00Z",
+    "proyecto": "Instalación de redes en sede norte",
+    "observaciones": "Se entrega completo el kit de instalación.",
+    "estado": "pendiente",
+    "fechaEstimadaDevolucion": "2024-08-10T15:00:00Z",
+    "almacenista": 2,
+    "personalId": 1
+  },
+  "productos": [
+    {
+      "ProductoId": 1,
+      "cantidad": 5
+    }
+  ]
+}
+
+http://localhost:3004/api/reintegro
+
+{
+  "reintegro": {
+    "fecha": "2024-07-20T10:30:00Z",
+    "observaciones": "Devolución parcial por daños",
+    "almacenistaId": 1,
+    "entregaId": 5,
+    "personalId": 1
+  },
+  "productos": [
+    {
+      "ProductoId": 2,
+      "cantidad": 2
+    }
+  ]
+}
+
+Actualizar stock del productos
+
+http://localhost:3004/api/productos/2/stock
+
+{
+  "cantidad": 50,
+  "motivo":"compra 25/10/2025"
+}

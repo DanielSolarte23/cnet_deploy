@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Acta de Entrega</title>
+
+        <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+
+        .textend {
+            text-align: right;
+            font-size: 18px;
+        }
+
+        .textencabezado {
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .tabla {
+            width: 95%;
+            border-collapse: collapse;
+        }
+
+        .tabla,
+        .tabla th,
+        .tabla td {
+            border: 1px solid black;
+            padding: 1px;
+            text-align: left;
+            text-align: center;
+        }
+
+        .tabla th {
+            padding: 8px;
+        }
+
+        .tabla-firmas {
+            width: 95%;
+            border-collapse: collapse;
+        }
+
+        .tabla-firmas,
+        .tabla-firmas td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        } 
+
+
+        .bordestabla th {
+            background-color: #f2f2f2;
+        }
+
+        .header {
+            width: 100%;
+            height: 10vh;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .footer {
+            width: 100%;
+            height: 8vh;
+            position: absolute;
+            opacity: 0.5;
+            bottom: 35px;
+        }
+
+        .fondoContainer {
+            background-image: url("/imgs/marcadeagua.png");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 100%;
+        }
+        .datos-proyecto {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .bord{
+            border-right: 1px solid black;
+        }
+
+        .container {
+            height: 78vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        .content{
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            height: 70%;
+        }
+
+        .titulo {
+            padding: 0 20px 0 20px 0;
+            width: 80%;
+        }
+
+        .firmas{
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .manifiesto {
+            width: 90%;
+            padding: 0 20px 0 20px 0;   
+        }
+
+        .fondo {
+            position: absolute;
+            z-index: -1;
+            top: 260px;
+            left: 150px;
+        }
+
+        td {
+        text-transform: uppercase;
+        }
+    </style>
+    </head>
+
+    <body class>
+        <div class="fondo">
+            <img src="/imgs/marcadeagua.png" alt style="height: 400px;">
+        </div>
+        <header class="header">
+            <img src="/imgs/logo.png" alt="Logo" style="width: 100%">
+        </header>
+
+        <div class="container">
+            <div class="content">
+                <div class="titulo">
+                    <p class="textend"><strong>Fecha: </strong>{{fecha}}</p>
+                    <h1 class="textencabezado">ACTA ENTREGA DE EQUIPOS</h1>
+                    <p style="font-size: 14px;">Con la presente acta se le hace
+                        entrega de los siguientes elementos para ser utilizados
+                        en sus actividades, de manera segura:
+                        {{destinoElemento}}</p>
+                </div>
+
+                <div class="datos-proyecto">
+                    <table class="tabla">
+                        <thead>
+                            <tr style="font-size: 16px;">
+                                <th class="tabla-titulo">Cantidad</th>
+                                <th class="tabla-titulo">Descripción</th>
+                                <th class="tabla-titulo">Marca</th>
+                                <th class="tabla-titulo">Serial</th>
+                                <th class="tabla-titulo">Color</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each productos}}
+                            <tr style="font-size: 14px;">
+                                <td>{{cantidad}}</td>
+                                <td>{{elemento}}</td>
+                                <td>{{marca}}</td>
+                                <td>{{serial}}</td>
+                                <td>{{color}}</td>
+                            </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="manifiesto">
+                    <p
+                        style="font-size: 16px; margin-bottom:-10px;"><b>Manifiesto
+                            que:</b></p>
+                    <ul style="font-size: 15px; font-weight: 300;">
+                        <li>He recibido los equipos relacionados y me comprometo
+                            a cuidarlos y darles el manejo adecuado para cada
+                            actividad.</li>
+                        <li>Que he sido instruido sobre el uso, mantenimiento y
+                            cuidados de estos.</li>
+                        <li>Los equipos y herramientas que aquí se entregan son
+                            y serán de l a empresa Colombianet y Sepcom
+                            ingeniería y Telecomunicaciones S.A.S. En todo
+                            momento, en caso de retiro por cualquier causa debe
+                            devolverlos de forma inmediata, si ocurriera la
+                            pérdida, daño o no devolución de los mismos,
+                            autorizo a mi empleador para que retenga de mi
+                            salario o liquidación definitiva el valor de los
+                            mismos.</li>
+                    </ul>
+                </div>
+
+                <div class="firmas">
+                    <table class="tabla-firmas">
+                        <thead>
+                            <tr style="font-size: 14px;">
+                                <th class="bord">Entregado por:</th>
+                                <th class="bord">Cargo:</th>
+                                <th class="bord">Recibido por:</th>
+                                <th class>Cargo:</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="font-size: 14px;">
+                                <td>{{almacenista.nombre}}</td>
+                                <td>{{almacenista.cargo}}</td>
+                                <td>{{tecnico.nombre}}</td>
+                                <td>{{tecnico.cargo}}</td>
+                            </tr>
+                            <tr style="font-size: 14px;">
+                                <th>Firma:</th>
+                                <th class="bord">Cédula:</th>
+                                <th>Firma:</th>
+                                <th>Cédula:</th>
+                            </tr>
+                            <tr style="font-size: 14px;">
+                                <td></td>
+                                <td>{{almacenista.cedula}}</td>
+                                <td></td>
+                                <td>{{tecnico.cedula}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <img src="/imgs/footer.png" alt="Footer" style="width: 100%">
+        </footer>
+        <script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const tbody = document.querySelector('.tabla tbody');
+    const totalRows = tbody.querySelectorAll('tr').length;
+    const minRows = 15;
+
+    for (let i = totalRows; i < minRows; i++) {
+      const tr = document.createElement('tr');
+      tr.style.fontSize = '12px';
+      tr.innerHTML = `
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+      `;
+      tbody.appendChild(tr);
+    }
+  });
+
+    document.querySelectorAll('.tabla-titulo').forEach(td => {
+        td.textContent = td.textContent.toUpperCase();
+    });
+
+</script>
+    </body>
+
+</html>
