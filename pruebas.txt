@@ -1,3 +1,15 @@
+
+http://localhost:3004/api/usuario
+{
+  "nombre":"Daniel Solarte",
+  "cedula":"1061913299",
+  "telefono":"3145655445",
+  "correo":"daniel@gmail.com",
+  "username":"dansol",
+  "password":"123456",
+  "rol":"administrador"
+}
+
 http://localhost:3004/api/stants
 
 {

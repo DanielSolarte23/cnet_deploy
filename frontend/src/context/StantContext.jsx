@@ -62,8 +62,8 @@ export function StantsProvider({ children }) {
     setLoading(true);
     try {
       const res = await createStantRequest(stant);
-      setStants([...stants, res.data]);
-      return res.data;
+      setStants([...stants, res.data.data]);
+      return res.data.data;
     } catch (error) {
       handleError(error, "Error al crear stant");
       console.log(error);

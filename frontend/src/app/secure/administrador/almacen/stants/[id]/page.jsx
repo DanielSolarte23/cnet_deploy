@@ -7,7 +7,6 @@ import { useProductos } from "@/context/ProductosContext";
 import { useParams } from "next/navigation";
 import FormularioMultipaso from "@/components/secure/admin/FormPrueba2";
 import FormStock from "@/components/secure/FormStock";
-import { get } from "react-hook-form";
 
 export default function UsuariosTabla() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -192,6 +191,7 @@ export default function UsuariosTabla() {
 
   const handleCloseModal = () => {
     setModalOpen(false);
+    fetchProductos();
   };
 
   const handleSearchChange = (e) => {
@@ -238,7 +238,9 @@ export default function UsuariosTabla() {
 
         {/* Título y descripción */}
         <h3 className="text-lg font-medium text-slate-200 mb-2">
-          {hasSearch ? "No se encontraron resultados" : "No hay productos registrados"}
+          {hasSearch
+            ? "No se encontraron resultados"
+            : "No hay productos registrados"}
         </h3>
         <p className="text-sm text-slate-400 mb-6 max-w-sm">
           {hasSearch
@@ -252,11 +254,7 @@ export default function UsuariosTabla() {
             onClick={abrirModal}
             className="bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-medium py-2 px-4 rounded-lg inline-flex items-center gap-2 transition-colors"
           >
-            <svg
-              className="w-4 h-4"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
                 d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
@@ -347,7 +345,10 @@ export default function UsuariosTabla() {
                 {/* Cuerpo */}
                 <tbody className=" divide-y divide-slate-700">
                   {currentItems.map((producto) => (
-                    <tr className=" border-b border-slate-700" key={producto.id}>
+                    <tr
+                      className=" border-b border-slate-700"
+                      key={producto.id}
+                    >
                       <td className="px-4 py-2 md:px-6 md:py-4">
                         {producto.descripcion || "-"}
                       </td>
@@ -402,13 +403,17 @@ export default function UsuariosTabla() {
 
                   <div className="space-y-2 text-sm">
                     <div className="grid grid-cols-3">
-                      <span className="font-medium text-slate-300">Modelo:</span>
+                      <span className="font-medium text-slate-300">
+                        Modelo:
+                      </span>
                       <span className="col-span-2 text-slate-400">
                         {producto.modelo || "-"}
                       </span>
                     </div>
                     <div className="grid grid-cols-3">
-                      <span className="font-medium text-slate-300">Categoría:</span>
+                      <span className="font-medium text-slate-300">
+                        Categoría:
+                      </span>
                       <span className="col-span-2 text-slate-400">
                         {producto.Subcategorium?.Categorium?.nombre ||
                           producto.Categorium?.nombre ||
@@ -416,7 +421,9 @@ export default function UsuariosTabla() {
                       </span>
                     </div>
                     <div className="grid grid-cols-3">
-                      <span className="font-medium text-slate-300">SubCategoría:</span>
+                      <span className="font-medium text-slate-300">
+                        SubCategoría:
+                      </span>
                       <span className="col-span-2 text-slate-400">
                         {producto.Subcategorium?.nombre || "-"}
                       </span>
@@ -447,7 +454,15 @@ export default function UsuariosTabla() {
         </div>
       )}
 
-      {modalOpen && <FormularioMultipaso handleCloseModal={handleCloseModal} />}
+      {modalOpen && (
+        <FormularioMultipaso
+          handleCloseModal={handleCloseModal}
+          stantId={stantId}
+          showNotification={showNotification}
+          getProductoByStantre={getProductoByStantre}
+          onProductoCreado={fetchProductos}
+        />
+      )}
 
       {modalStock && (
         <FormStock

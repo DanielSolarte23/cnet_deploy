@@ -12,7 +12,13 @@ import { useStants } from "@/context/StantContext";
 import { useProductos } from "@/context/ProductosContext";
 import { useCategorias } from "@/context/CategoriaContext";
 
-export default function FormularioMultipaso({ handleCloseModal }) {
+export default function FormularioMultipaso({
+  handleCloseModal,
+  stantId,
+  showNotification,
+  getProductoByStantre,
+  onProductoCreado,
+}) {
   const { getStants, stants } = useStants();
   const { createProducto } = useProductos();
   const { getCategorias, categorias, getSubcategoriasByCategoria } =
@@ -24,6 +30,7 @@ export default function FormularioMultipaso({ handleCloseModal }) {
   const [nuevaSubcategoria, setNuevaSubcategoria] = useState(false);
   const [unidades, setUnidades] = useState([{ serial: "", estado: "nuevo" }]);
   const [tieneSeriales, setTieneSeriales] = useState(true);
+  const [success, setSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
     codigo: "",
@@ -36,7 +43,7 @@ export default function FormularioMultipaso({ handleCloseModal }) {
     stock: 0,
     estado: "disponible",
     SubcategoriumId: "",
-    StantId: "",
+    StantId: stantId,
     notas: "",
     categoria: {
       nombre: "",
@@ -48,20 +55,15 @@ export default function FormularioMultipaso({ handleCloseModal }) {
     },
   });
 
-  // Simulando las funciones de contexto
   useEffect(() => {
-    // Simular getStants
     getStants();
-    // Simular getCategorias
     getCategorias();
   }, []);
 
   useEffect(() => {
     if (formData.subcategoria.CategoriumId) {
-      // Simular getSubcategoriasByController
       getSubcategoriasByCategoria(formData.subcategoria.CategoriumId)
         .then((res) => {
-          // Verificar la estructura de la respuesta
           if (res && res.data) {
             setSubcategorias(res.data);
           } else if (res && Array.isArray(res)) {
@@ -177,48 +179,58 @@ export default function FormularioMultipaso({ handleCloseModal }) {
     setUnidades(nuevasUnidades);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Preparar datos para enviar
-    const productoData = {
-      ...formData,
-    };
+    try {
+      // Preparar datos para enviar
+      const productoData = {
+        ...formData,
+      };
 
-    // Si tiene seriales, agregar las unidades
-    if (tieneSeriales && unidades.length > 0) {
-      productoData.unidades = unidades;
-    } else {
-      // Si no tiene seriales, asegurarse de que no se envíen unidades
-      delete productoData.unidades;
-    }
-
-    // Si se está usando subcategoría existente, limpiar datos de nueva categoría/subcategoría
-    if (formData.SubcategoriumId && !nuevaSubcategoria) {
-      delete productoData.subcategoria;
-      delete productoData.categoria;
-    }
-
-    // Si no se está creando una nueva categoría, eliminar ese objeto
-    if (!nuevaCategoria) {
-      delete productoData.categoria;
-      if (productoData.subcategoria) {
-        productoData.subcategoria.crearCategoria = false;
+      // Si tiene seriales, agregar las unidades
+      if (tieneSeriales && unidades.length > 0) {
+        productoData.unidades = unidades;
+      } else {
+        // Si no tiene seriales, asegurarse de que no se envíen unidades
+        delete productoData.unidades;
       }
+
+      // Si se está usando subcategoría existente, limpiar datos de nueva categoría/subcategoría
+      if (formData.SubcategoriumId && !nuevaSubcategoria) {
+        delete productoData.subcategoria;
+        delete productoData.categoria;
+      }
+
+      // Si no se está creando una nueva categoría, eliminar ese objeto
+      if (!nuevaCategoria) {
+        delete productoData.categoria;
+        if (productoData.subcategoria) {
+          productoData.subcategoria.crearCategoria = false;
+        }
+      }
+
+      console.log("Enviando datos:", productoData);
+
+      // Esperar a que se complete la creación del producto
+      await createProducto(productoData);
+
+      showNotification("Producto registrado correctamente");
+      console.log("Producto registrado correctamente");
+      setSuccess(true);
+      resetForm();
+
+      // Llamar a la función para recargar los productos antes de cerrar el modal
+      if (onProductoCreado) {
+        await onProductoCreado();
+      }
+
+      handleCloseModal();
+    } catch (error) {
+      console.log(error);
+      showNotification("Error al registrar producto", "error");
+      setSuccess(false);
     }
-
-    // Simular envío a la API
-    console.log("Enviando datos:", productoData);
-
-    createProducto(productoData);
-
-    // aquí iría: createProducto(productoData);
-
-    // Mostrar alerta de éxito
-    alert("Producto creado correctamente");
-
-    // Reiniciar formulario
-    resetForm();
   };
 
   const resetForm = () => {
@@ -298,7 +310,7 @@ export default function FormularioMultipaso({ handleCloseModal }) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/70 p-4 z-50">
-      <div className="w-full max-w-4xl max-h-[90%] overflow-y-auto mx-auto bg-slate-900 border border-slate-700 p-6 rounded-lg shadow-md">
+      <div className="w-full max-w-4xl max-h-[90%] overflow-y-auto mx-auto bg-slate-950 border border-slate-700 p-6 rounded-lg shadow-md">
         <i
           onClick={() => {
             handleCloseModal();
@@ -537,7 +549,7 @@ export default function FormularioMultipaso({ handleCloseModal }) {
                     required
                   />
                 </div>
-
+                {/* 
                 <div>
                   <label className="block mb-1 font-medium">Estante:</label>
                   <select
@@ -554,7 +566,7 @@ export default function FormularioMultipaso({ handleCloseModal }) {
                       </option>
                     ))}
                   </select>
-                </div>
+                </div> */}
 
                 <div className="col-span-2">
                   <label className="block mb-1 font-medium">Descripción:</label>
@@ -608,7 +620,7 @@ export default function FormularioMultipaso({ handleCloseModal }) {
                     Unidad de Medida:
                   </label>
                   <select
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-900"
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-900 bg-slate-950"
                     name="unidadMedida"
                     value={formData.unidadMedida}
                     onChange={handleChange}
@@ -637,7 +649,7 @@ export default function FormularioMultipaso({ handleCloseModal }) {
                 <div>
                   <label className="block mb-1 font-medium">Estado:</label>
                   <select
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-900"
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-900 bg-slate-950"
                     name="estado"
                     value={formData.estado}
                     onChange={handleChange}

@@ -1,7 +1,11 @@
 "use client";
 
 import { createContext, useContext, useState } from "react";
-import { getPersonalRequest } from "../api/personal";
+import {
+  getPersonalRequest,
+  createPersonalRequest,
+  updatePersonalRequest,
+} from "../api/personal";
 
 const PersonalContext = createContext();
 
@@ -16,7 +20,12 @@ export const usePersonal = () => {
 export const PersonalProvider = ({ children }) => {
   const [personals, setPersonal] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [errors, setErrors] = useState(null);
+
+  const handleError = (error, defaultMessage) => {
+    setErrors(error.response?.data?.message || defaultMessage);
+    console.log(error);
+  };
 
   const getPersonal = async () => {
     setLoading(true);
@@ -24,9 +33,33 @@ export const PersonalProvider = ({ children }) => {
       const response = await getPersonalRequest();
       setPersonal(response.data.data);
     } catch (error) {
-      setError(error);
+      setErrors(error);
     } finally {
-      setLoading(false); 
+      setLoading(false);
+    }
+  };
+
+  const createPersonal = async (personal) => {
+    try {
+      const res = await createPersonalRequest(personal);
+      setPersonal((prev) => [...prev, res.data.data]);
+      return res.data.data;
+    } catch (error) {
+      handleError(error, "Error al registrar personal");
+      console.log(error);
+    }
+  };
+
+  const updatePersonal = async (id, personal) => {
+    try {
+      const res = await updatePersonalRequest(id, personal);
+      setPersonal((prev) =>
+        prev.map((pers) => (pers.id === id ? res.data : pers))
+      );
+      return res.data;
+    } catch (error) {
+      handleError(error, "Error al actualizar personal");
+      console.log(error);
     }
   };
 
@@ -35,8 +68,10 @@ export const PersonalProvider = ({ children }) => {
       value={{
         personals,
         loading,
-        error,
+        errors,
         getPersonal,
+        updatePersonal,
+        createPersonal
       }}
     >
       {children}

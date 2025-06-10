@@ -3,11 +3,8 @@ import { useState, useEffect, useMemo } from "react";
 import LoadingScreen from "@/components/reutilizables/LoadingScreen";
 import NotificationModal from "@/components/reutilizables/NotificacionModal";
 import Paginacion from "@/components/reutilizables/Paginacion";
-import { useProductos } from "@/context/ProductosContext";
-import { useParams } from "next/navigation";
-import FormularioMultipaso from "@/components/secure/admin/FormPrueba2";
-import FormStock from "@/components/secure/FormStock";
 import { usePersonal } from "@/context/PersonalContext";
+import PersonalForm from "@/components/secure/admin/FormPersonal";
 
 export default function UsuariosTabla() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -37,7 +34,7 @@ export default function UsuariosTabla() {
           setItemsPerPage(10);
         } else if (window.innerWidth >= 1024) {
           // lg
-          setItemsPerPage(8);
+          setItemsPerPage(5);
         } else if (window.innerWidth >= 640) {
           // sm
           setItemsPerPage(5);
@@ -149,17 +146,17 @@ export default function UsuariosTabla() {
     setModalOpen(true);
   };
 
-  // const openModalStock = (personal) => {
-  //   setModalStock(true);
-  //   setProductoSeleccionado(personal);
-  //   console.log(personal);
-  // };
+  const openModalStock = (personal) => {
+    setModalStock(true);
+    setProductoSeleccionado(personal);
+    console.log(personal);
+  };
 
-  // const handleCloseModalStock = () => {
-  //   setModalStock(false);
-  //   setProductoSeleccionado(null);
-  //   fetchProductos(); // Refrescar la lista de personals después de cerrar el modal
-  // };
+  const handleCloseModalStock = () => {
+    setModalStock(false);
+    setProductoSeleccionado(null);
+    getPersonal();
+  };
 
   const handleCloseModal = () => {
     setModalOpen(false);
@@ -211,12 +208,12 @@ export default function UsuariosTabla() {
         <h3 className="text-lg font-medium text-slate-200 mb-2">
           {hasSearch
             ? "No se encontraron resultados"
-            : "No hay personals registrados"}
+            : "No hay personal registrado"}
         </h3>
         <p className="text-sm text-slate-400 mb-6 max-w-sm">
           {hasSearch
             ? `No encontramos personal que coincidan con "${searchQuery}". Intenta con otros términos de búsqueda.`
-            : "Aún no tienes personal registrado . Comienza agregando."}
+            : "Aún no tienes personal registrado. Comienza agregando nuevo personal."}
         </p>
 
         {/* Botón de acción */}
@@ -327,8 +324,7 @@ export default function UsuariosTabla() {
                         {personal.cedula || "-"}
                       </td>
                       <td className="px-4 py-2 md:px-6 md:py-4">
-                        {personal.telefono || 
-                          "-"}
+                        {personal.telefono || "-"}
                       </td>
                       <td className="px-4 py-2 md:px-6 md:py-4">
                         {personal.correo || ""}
@@ -359,49 +355,47 @@ export default function UsuariosTabla() {
                   className="bg-slate-950 p-4 rounded-lg border border-slate-700 shadow-sm"
                 >
                   <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-medium">
-                      {personal.descripcion || ""}
+                    <h3 className="font-medium text-white">
+                      {personal.nombre} {personal.apellido}
                     </h3>
                     <button
                       onClick={() => openModalStock(personal)}
-                      className="bg-slate-900 hover:bg-gray-200 p-2 rounded-full"
-                      aria-label="Ajustar Stock"
+                      className="bg-slate-900 hover:bg-slate-800 p-2 rounded-full text-yellow-500"
+                      aria-label="Editar Personal"
                     >
-                      <i className="fa-solid fa-repeat"></i>
+                      <i className="fa-solid fa-pen"></i>
                     </button>
                   </div>
 
                   <div className="space-y-2 text-sm">
                     <div className="grid grid-cols-3">
                       <span className="font-medium text-slate-300">
-                        Modelo:
+                        Cédula:
                       </span>
                       <span className="col-span-2 text-slate-400">
-                        {personal.modelo || "-"}
+                        {personal.cedula || "-"}
                       </span>
                     </div>
                     <div className="grid grid-cols-3">
                       <span className="font-medium text-slate-300">
-                        Categoría:
+                        Teléfono:
                       </span>
                       <span className="col-span-2 text-slate-400">
-                        {personal.Subcategorium?.Categorium?.nombre ||
-                          personal.Categorium?.nombre ||
-                          "-"}
+                        {personal.telefono || "-"}
                       </span>
                     </div>
                     <div className="grid grid-cols-3">
                       <span className="font-medium text-slate-300">
-                        SubCategoría:
+                        Correo:
                       </span>
                       <span className="col-span-2 text-slate-400">
-                        {personal.Subcategorium?.nombre || "-"}
+                        {personal.correo || "-"}
                       </span>
                     </div>
                     <div className="grid grid-cols-3">
-                      <span className="font-medium text-slate-300">Stock:</span>
+                      <span className="font-medium text-slate-300">Cargo:</span>
                       <span className="col-span-2 text-slate-400">
-                        {personal.stock || "0"}
+                        {personal.cargo || "-"}
                       </span>
                     </div>
                   </div>
@@ -424,10 +418,10 @@ export default function UsuariosTabla() {
         </div>
       )}
 
-      {modalOpen && <FormularioMultipaso handleCloseModal={handleCloseModal} />}
+      {modalOpen && <PersonalForm handleCloseModal={handleCloseModal} />}
 
       {modalStock && (
-        <FormStock
+        <PersonalForm
           personal={productoSeleccionado}
           handleCloseModalStock={handleCloseModalStock}
           showNotification={showNotification}

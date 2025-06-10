@@ -164,15 +164,15 @@ const ActaController = {
       let htmlContent = await ActaController.generarHTMLActa(datosActa);
 
       // Si la entrega está parcialmente o completamente devuelta, añadir acta de devolución
-      if (
-        entrega.estado === "parcialmente_devuelta" ||
-        entrega.estado === "completamente_devuelta"
-      ) {
-        const htmlDevolucion = await ActaController.generarHTMLDevolucion(
-          datosActa
-        );
-        htmlContent += '<div class="page-break"></div>' + htmlDevolucion;
-      }
+      // if (
+      //   entrega.estado === "parcialmente_devuelta" ||
+      //   entrega.estado === "completamente_devuelta"
+      // ) {
+      const htmlDevolucion = await ActaController.generarHTMLDevolucion(
+        datosActa
+      );
+      htmlContent += '<div class="page-break"></div>' + htmlDevolucion;
+      // }
 
       // Enviar directamente el HTML para vista previa
       return res.send(htmlContent);
@@ -249,7 +249,6 @@ const ActaController = {
    * (Esto podría necesitar ajustes según tu lógica de devoluciones)
    */
   calcularDevueltaPorUnidad(entregaProducto, unidadId) {
-
     if (!entregaProducto.devuelto || entregaProducto.devuelto === 0) {
       return 0;
     }

@@ -5,6 +5,7 @@ import { useStants } from "@/context/StantContext";
 import Paginacion from "@/components/reutilizables/Paginacion";
 import { usePathname } from "next/navigation";
 import { useProductos } from "@/context/ProductosContext";
+import StantForm from "@/components/secure/StantForm";
 
 function Page() {
   // Obtener el contexto de Productos
@@ -12,6 +13,7 @@ function Page() {
 
   // Estado para almacenar la cantidad de productos por estante
   const [cantidadesProductos, setCantidadesProductos] = useState({});
+  const [openModal, setOpenModal] = useState(false);
 
   // Obtener el contexto de Stants
   const {
@@ -48,19 +50,21 @@ function Page() {
 
   // Función segura para convertir a minúsculas
   const safeToLowerCase = (value) => {
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       return value.toLowerCase();
     }
-    return '';
+    return "";
   };
 
-  // Función para abrir el modal (debes implementarla o conectarla con tu modal)
   const abrirModal = (stant) => {
-    // Implementa tu lógica para abrir el modal de creación/edición
+    setOpenModal(true);
     console.log("Abrir modal para:", stant);
   };
 
-  // Cargar las cantidades de productos cuando los estantes cambian
+  const handleCloseModal = () => {
+    setOpenModal(false)
+  }
+
   useEffect(() => {
     const cargarCantidades = async () => {
       if (Array.isArray(stants) && stants.length > 0) {
@@ -225,7 +229,7 @@ function Page() {
                 </p>
               </div>
 
-              <Link 
+              <Link
                 href={`/secure/administrador/almacen/stants/${stant.id}`}
                 className="w-full text-center mt-2 px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-yellow-500 transition-colors"
               >
@@ -250,6 +254,13 @@ function Page() {
           getPageNumbers={getPageNumbers}
         />
       </footer>
+
+      {openModal && (
+        <StantForm
+          handleCloseModal={handleCloseModal}
+          // showNotification={showNotification}
+        />
+      )}
     </div>
   );
 }
