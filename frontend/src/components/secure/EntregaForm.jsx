@@ -14,6 +14,7 @@ import { usePersonal } from "@/context/PersonalContext";
 import { useProductos } from "@/context/ProductosContext";
 import { useAuth } from "@/context/AuthContext";
 import { useEntregas } from "@/context/EntregaContext";
+import axios from "@/api/axios"
 
 export default function FormularioEntrega({
   handleCloseModal,
@@ -60,22 +61,23 @@ export default function FormularioEntrega({
   useEffect(() => {
     // Cargar el personals al montar el componente
     if (getPersonal) {
-      getPersonal();
+      getPersonal(); 
+
     }
     if (getProductos) {
       getProductos();
     }
   }, []);
 
-  useEffect(() => {
-    setAlmacenistas([
-      { id: 1, nombre: "Juan Pérez", username: "jperez" },
-      { id: 2, nombre: "María López", username: "mlopez" },
-    ]);
-  }, []);
+  // useEffect(() => {
+  //   setAlmacenistas([
+  //     { id: 1, nombre: "Juan Pérez", username: "jperez" },
+  //     { id: 2, nombre: "María López", username: "mlopez" },
+  //   ]);
+  // }, []);
 
   // Cargar las unidades disponibles cuando se selecciona un producto
-  useEffect(() => {
+ useEffect(() => {
     const cargarUnidadesDisponibles = async () => {
       if (
         !productoSeleccionado.ProductoId ||
@@ -86,27 +88,15 @@ export default function FormularioEntrega({
       }
 
       try {
-        // En una aplicación real, aquí cargarías las unidades disponibles desde la API
-        // Suponiendo que hay un endpoint /api/productos/:id/unidades
-        const response = await fetch(
-          `http://localhost:3004/api/products/${productoSeleccionado.ProductoId}/unidades`
-        );
-        const data = await response.json();
-        console.log("Unidades disponibles:", data.data);
-        setUnidadesDisponibles(data.data || []); // Asegurar que sea un array
+        const response = await axios.get(`/products/${productoSeleccionado.ProductoId}/unidades`);
 
-        // Por ahora, simularemos algunas unidades
-        // setUnidadesDisponibles([
-        //   { id: 1, serial: "SN001", productoId: productoSeleccionado.ProductoId },
-        //   { id: 2, serial: "SN002", productoId: productoSeleccionado.ProductoId },
-        //   { id: 3, serial: "SN003", productoId: productoSeleccionado.ProductoId },
-        //   { id: 4, serial: "SN004", productoId: productoSeleccionado.ProductoId },
-        //   { id: 5, serial: "SN005", productoId: productoSeleccionado.ProductoId },
-        // ]);
+        console.log("Unidades disponibles:", response.data.data);
+        setUnidadesDisponibles(response.data.data || []); // Asegurar que sea un array
+
       } catch (error) {
         console.error("Error al cargar unidades:", error);
         setError("No se pudieron cargar las unidades del producto");
-        setUnidadesDisponibles([]); // Asegurar que sea un array en caso de error
+        setUnidadesDisponibles([]);
       }
     };
 
@@ -252,7 +242,8 @@ export default function FormularioEntrega({
           {
             ProductoId: productoSeleccionado.ProductoId,
             cantidad: productoSeleccionado.cantidad,
-            descripcion: productoInfo?.descripcion || "Producto sin descripción",
+            descripcion:
+              productoInfo?.descripcion || "Producto sin descripción",
             tieneSeriales: productoSeleccionado.tieneSeriales,
             unidadesSeriadas: productoSeleccionado.tieneSeriales
               ? productoSeleccionado.unidadesSeriadas
@@ -427,11 +418,12 @@ export default function FormularioEntrega({
                 required
               >
                 <option value="">Seleccione un técnico</option>
-                {Array.isArray(personals) && personals.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nombre} - {p.cargo}
-                  </option>
-                ))}
+                {Array.isArray(personals) &&
+                  personals.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre} - {p.cargo}
+                    </option>
+                  ))}
               </select>
             </div>
 
@@ -466,11 +458,12 @@ export default function FormularioEntrega({
                   className="w-full p-2 border rounded-md focus:ring-2 focus:ring-slate-500 dark:bg-slate-950"
                 >
                   <option value="">Seleccione un producto</option>
-                  {Array.isArray(productos) && productos.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.descripcion} (Stock: {p.stock})
-                    </option>
-                  ))}
+                  {Array.isArray(productos) &&
+                    productos.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.descripcion} (Stock: {p.stock})
+                      </option>
+                    ))}
                 </select>
               </div>
 
@@ -507,7 +500,8 @@ export default function FormularioEntrega({
                     onChange={handleSerialChange}
                     className="w-full p-2 border rounded-md focus:ring-2 focus:ring-slate-500 dark:bg-slate-950"
                   >
-                    {Array.isArray(unidadesDisponibles) && unidadesDisponibles.length > 0 ? (
+                    {Array.isArray(unidadesDisponibles) &&
+                    unidadesDisponibles.length > 0 ? (
                       unidadesDisponibles.map((unidad) => (
                         <option key={unidad.id} value={unidad.id}>
                           {unidad.serial}
