@@ -13,11 +13,8 @@ import { useProductos } from "@/context/ProductosContext";
 import { useStants } from "@/context/StantContext";
 
 export default function ProductForm() {
-  const {
-    categorias,
-    getCategorias,
-    getSubcategoriasByCategoria,
-  } = useCategorias();
+  const { categorias, getCategorias, getSubcategoriasByCategoria } =
+    useCategorias();
   const { productos, createProducto } = useProductos();
   const { stants, getStants } = useStants();
   useEffect(() => {
@@ -44,7 +41,7 @@ export default function ProductForm() {
 
   // Estado para el producto
   const [product, setProduct] = useState({
-    codigo: "",
+    // codigo: "",
     descripcion: "",
     marca: "",
     modelo: "",
@@ -325,7 +322,7 @@ export default function ProductForm() {
     try {
       // Construir el objeto base para enviar a la API
       const requestData = {
-        codigo: product.codigo,
+        // codigo: product.codigo,
         descripcion: product.descripcion,
         marca: product.marca,
         modelo: product.modelo,
@@ -465,7 +462,7 @@ export default function ProductForm() {
         StantId: "",
       });
       setProduct({
-        codigo: "",
+        // codigo: "",
         descripcion: "",
         marca: "",
         modelo: "",
@@ -713,6 +710,7 @@ export default function ProductForm() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* 
               <div>
                 <label className="block text-sm font-medium mb-1">
                   Código *
@@ -725,8 +723,7 @@ export default function ProductForm() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
                   required
                 />
-              </div>
-
+              </div> */}
               <div>
                 <label className="block text-sm font-medium mb-1">
                   Descripción *

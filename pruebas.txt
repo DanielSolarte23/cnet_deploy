@@ -73,12 +73,14 @@ http://localhost:3004/api/productos
 http://localhost:3004/api/personal
 
 {
-  "nombre":"Kevin",
-  "cedula":"1061813299",
-  "cargo":"tecnico",
-  "departamento":"cauca",
+  "nombre":"Miller Edinson",
+  "apellido":"Cañar Paredes",
+  "cedula":"76328447",
+  "cargo":"Gerente Operativo",
+  "departamento":"Popayan(Cauca)",
   "telefono":"3156955885",
   "correo":"correo@ejemplo.com",
+  "password":"",
   "activo":true
 }
 

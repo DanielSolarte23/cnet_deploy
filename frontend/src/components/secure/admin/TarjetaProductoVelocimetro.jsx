@@ -135,12 +135,14 @@ export default function TarjetaProductoAdaptativa({ producto }) {
               <span className="font-bold">{formatearNumero(item.stockMinimo)} {item.unidadMedida.charAt(0)}</span>
             </div>
           </div>
-          
-          <div className="text-xs mb-2">
+          {/* <div className="text-xs mb-2">
             <p className="text-gray-500">Categoría</p>
             <p className="font-medium truncate">{item.Subcategorium.Categorium.nombre}</p>
+          </div> */}
+          <div className="text-xs mb-2">
+            <p className="text-gray-500">Modelo</p>
+            <p className="font-medium truncate">{item.modelo}</p>
           </div>
-          
           <div className="text-xs mb-2">
             <p className="text-gray-500">Subcategoría</p>
             <p className="font-medium truncate">{item.Subcategorium.nombre}</p>

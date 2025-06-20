@@ -69,7 +69,7 @@ export default function UsuariosTabla() {
           setItemsPerPage(10);
         } else if (window.innerWidth >= 1024) {
           // lg
-          setItemsPerPage(8);
+          setItemsPerPage(5);
         } else if (window.innerWidth >= 640) {
           // sm
           setItemsPerPage(5);

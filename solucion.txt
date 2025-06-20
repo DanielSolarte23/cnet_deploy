@@ -1,0 +1,201 @@
+module.exports = (sequelize, DataTypes) => {
+  const EntregaProducto = sequelize.define("EntregaProducto", {
+    cantidad: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      validate: {
+        min: 1,
+      },
+    },
+    descripcion: DataTypes.STRING,
+    serial: DataTypes.STRING,
+    marca: DataTypes.STRING,
+    color: DataTypes.STRING,
+    devuelto: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      validate: {
+        isValidDevuelto(value) {
+          if (value < 0) {
+            throw new Error("El valor devuelto no puede ser negativo");
+          }
+        },
+      },
+    },
+    estado: {
+      type: DataTypes.ENUM(
+        "pendiente",
+        "devuelto_parcial",
+        "devuelto_completo"
+      ),
+      defaultValue: "pendiente",
+    },
+    // En el modelo EntregaProducto
+    unidadesSeriadas: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
+  });
+
+  EntregaProducto.associate = (models) => {
+    EntregaProducto.belongsTo(models.Entrega);
+    EntregaProducto.belongsTo(models.Producto);
+  };
+
+  return EntregaProducto;
+};
+
+module.exports = (sequelize, DataTypes) => {
+  const Entrega = sequelize.define("Entrega", {
+    fecha: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      allowNull: false
+    },
+    proyecto: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    observaciones: DataTypes.TEXT,
+    estado: {
+      type: DataTypes.ENUM('pendiente', 'entregada', 'parcialmente_devuelta', 'completamente_devuelta'),
+      defaultValue: 'pendiente'
+    },
+    fechaEstimadaDevolucion: DataTypes.DATE
+  });
+
+  Entrega.associate = (models) => {
+    Entrega.hasMany(models.EntregaProducto);
+    
+    // Relación con el almacenista (Usuario)
+    Entrega.belongsTo(models.Usuario, {
+      foreignKey: "almacenista",
+      as: "almacenistaData",
+    });
+    
+    // Relación con la persona que recibe (Personal)
+    Entrega.belongsTo(models.Personal, {
+      foreignKey: "personalId",
+      as: "tecnicoData",
+      allowNull: true // Puede ser nulo como solicitaste
+    });
+  };
+
+  return Entrega;
+};
+
+module.exports = (sequelize, DataTypes) => {
+  const Producto = sequelize.define("Producto", {
+    codigo: {
+      type: DataTypes.STRING,
+      unique: true
+    },
+    descripcion: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    marca: DataTypes.STRING,
+    modelo: DataTypes.STRING,
+    color: DataTypes.STRING,
+    unidadMedida: {
+      type: DataTypes.STRING,
+      defaultValue: 'unidad'
+    },
+    stock: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      validate: {
+        min: 0
+      }
+    },
+    stockMinimo: {
+      type: DataTypes.INTEGER,
+      defaultValue: 5
+    },
+    fechaIngreso: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    },
+    estado: {
+      type: DataTypes.ENUM('disponible', 'agotado', 'baja'),
+      defaultValue: 'disponible'
+    },
+    notas: DataTypes.TEXT
+  });
+
+  Producto.associate = (models) => {
+    Producto.belongsTo(models.Stant);
+    Producto.belongsTo(models.Subcategoria);
+    Producto.hasMany(models.EntregaProducto);
+    Producto.hasMany(models.ReintegroProducto);
+    Producto.hasMany(models.ProductoUnidad, { foreignKey: 'productoId' }); // Nueva relación
+  };
+
+  return Producto;
+};
+
+module.exports = (sequelize, DataTypes) => {
+    const ProductoUnidad = sequelize.define("ProductoUnidad", {
+      serial: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true
+      },
+      estado: {
+        type: DataTypes.ENUM('nuevo', 'usado', 'baja'),
+        defaultValue: 'nuevo'
+      },
+      fechaIngreso: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW
+      }
+    });
+  
+    ProductoUnidad.associate = (models) => {
+      ProductoUnidad.belongsTo(models.Producto, { foreignKey: 'productoId' });
+    };
+  
+    return ProductoUnidad;
+  };
+  
+  // Obtener todas las entregas
+  async findAll(req, res) {
+    try {
+      const entregas = await Entrega.findAll({
+        include: [
+          {
+            model: EntregaProducto,
+            include: [{ model: Producto }],
+            // Asegurar que se incluyan todos los campos, incluyendo unidadesSeriadas
+            attributes: { 
+              include: ['unidadesSeriadas'] // Explícitamente incluir el campo
+            }
+          },
+          {
+            model: Usuario,
+            as: "almacenistaData",
+            attributes: ["id", "nombre", "username"],
+          },
+          {
+            model: Personal,
+            as: "tecnicoData",
+            attributes: ["id", "nombre", "cedula", "cargo"],
+          },
+        ],
+        order: [["fecha", "DESC"]],
+      });
+
+      return res.status(200).json({
+        success: true,
+        count: entregas.length,
+        data: entregas,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Error al obtener las entregas",
+        error: error.message,
+      });
+    }
+  },

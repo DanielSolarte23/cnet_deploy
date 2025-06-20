@@ -33,7 +33,7 @@ export default function FormularioMultipaso({
   const [success, setSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
-    codigo: "",
+    // codigo: "",
     descripcion: "",
     marca: "",
     modelo: "",
@@ -236,7 +236,7 @@ export default function FormularioMultipaso({
   const resetForm = () => {
     setPaso(1);
     setFormData({
-      codigo: "",
+      // codigo: "",
       descripcion: "",
       marca: "",
       modelo: "",
@@ -293,7 +293,7 @@ export default function FormularioMultipaso({
 
   const validarPaso2 = () => {
     return (
-      formData.codigo.trim() !== "" &&
+      // formData.codigo.trim() !== "" &&
       formData.descripcion.trim() !== "" &&
       formData.marca.trim() !== "" &&
       formData.modelo.trim() !== "" &&
@@ -538,7 +538,7 @@ export default function FormularioMultipaso({
               </h2>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                {/* <div>
                   <label className="block mb-1 font-medium">Código:</label>
                   <input
                     type="text"
@@ -548,7 +548,7 @@ export default function FormularioMultipaso({
                     onChange={handleChange}
                     required
                   />
-                </div>
+                </div> */}
                 {/* 
                 <div>
                   <label className="block mb-1 font-medium">Estante:</label>
@@ -569,7 +569,7 @@ export default function FormularioMultipaso({
                 </div> */}
 
                 <div className="col-span-2">
-                  <label className="block mb-1 font-medium">Descripción:</label>
+                  <label className="block mb-1 font-medium">Nombre del producto:</label>
                   <input
                     type="text"
                     className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-900"
@@ -829,10 +829,10 @@ export default function FormularioMultipaso({
                     </p>
                   </div>
 
-                  <div>
+                  {/* <div>
                     <p className="font-medium">Código:</p>
                     <p>{formData.codigo}</p>
-                  </div>
+                  </div> */}
 
                   <div>
                     <p className="font-medium">Estante:</p>

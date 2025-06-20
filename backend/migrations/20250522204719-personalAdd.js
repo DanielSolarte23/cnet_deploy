@@ -1,7 +1,7 @@
 "use strict";
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.addColumn("Personals", "fecha_nacimiento", {
+    await queryInterface.addColumn("Personal", "fecha_nacimiento", {
       type: Sequelize.DATE,
       allowNull: false,
       validate: {
@@ -13,7 +13,7 @@ module.exports = {
         },
       },
     });
-    await queryInterface.addColumn("Personals", "password", {
+    await queryInterface.addColumn("Personal", "password", {
       type: Sequelize.STRING,
       allowNull: false,
       validate: {
@@ -25,7 +25,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.removeColumn("Personals", "fecha_nacimiento");
-    await queryInterface.removeColumn("Personals", "password");
+    await queryInterface.removeColumn("Personal", "fecha_nacimiento");
+    await queryInterface.removeColumn("Personal", "password");
   },
 };

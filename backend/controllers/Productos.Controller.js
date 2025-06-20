@@ -31,9 +31,56 @@ const verificarStockBajo = async (producto) => {
   }
 };
 
+// Función independiente (fuera del controlador)
+const generarCodigoProducto = async (
+  prefijo = "PRD",
+  digitos = 4,
+  transaction
+) => {
+  try {
+    const ultimoProducto = await Producto.findOne({
+      order: [["id", "DESC"]],
+      transaction,
+      attributes: ["codigo"],
+    });
+
+    let siguienteNumero = 1;
+
+    if (ultimoProducto && ultimoProducto.codigo) {
+      const regex = new RegExp(`${prefijo}-(\\d+)`);
+      const match = ultimoProducto.codigo.match(regex);
+      if (match) {
+        siguienteNumero = parseInt(match[1]) + 1;
+      }
+    }
+
+    const nuevoCodigo = `${prefijo}-${siguienteNumero
+      .toString()
+      .padStart(digitos, "0")}`;
+
+    // Verificar unicidad
+    const codigoExistente = await Producto.findOne({
+      where: { codigo: nuevoCodigo },
+      transaction,
+    });
+
+    if (codigoExistente) {
+      const timestamp = Date.now().toString().slice(-6);
+      return `${prefijo}-${timestamp}`;
+    }
+
+    return nuevoCodigo;
+  } catch (error) {
+    console.error("Error generando código:", error);
+    const timestamp = Date.now().toString().slice(-6);
+    return `${prefijo}-${timestamp}`;
+  }
+};
+
 // Controlador para productos
 const ProductoController = {
   // Crear un nuevo producto con unidades opcionales
+
   async create(req, res) {
     const transaction = await db.sequelize.transaction();
 
@@ -91,6 +138,16 @@ const ProductoController = {
         productoData.StantId = StantId;
       }
 
+      // **GENERACIÓN AUTOMÁTICA DEL CÓDIGO DEL PRODUCTO**
+      if (!productoData.codigo) {
+        // Y en el controlador usar:
+        productoData.codigo = await generarCodigoProducto(
+          "PRD",
+          4,
+          transaction
+        );
+      }
+
       // Crear el producto base
       const producto = await Producto.create(productoData, {
         transaction,
@@ -134,6 +191,7 @@ const ProductoController = {
       });
     }
   },
+  // Y en el controlador usar:
 
   // Obtener todos los productos
   async findAll(req, res) {
@@ -517,7 +575,7 @@ const ProductoController = {
       });
     }
   },
-  
+
   // Optener productos por Stant
   async findByStant(req, res) {
     try {
