@@ -11,7 +11,7 @@ export const deleteProductoRequest = async (id) =>
 export const getProductosByCategoriaRequest = async (categoria) =>
   axios.get(`/productos/categoria/${categoria}`);
 export const getProductoByStantreRequest = async (id) =>
-  axios.get(`/products/statnt/${id}`);
+  axios.get(`/products/stant/${id}`);
 
 export const updateStockRequest = async (id, data) =>
   axios.put(`/productos/${id}/stock`, data);

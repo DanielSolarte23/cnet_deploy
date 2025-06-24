@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 3004;
 const app = express();
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: "http://172.16.110.74:3000" || "http://localhost:3000",
     credentials: true,
   })
 );
@@ -28,7 +28,6 @@ app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
-
 
 app.use(bodyParser.json());
 app.use("/api", usuarioRoutes);
@@ -43,7 +42,7 @@ app.use("/api", NotificacionRoutes);
 
 async function startServer() {
   try {
-    await sequelize.authenticate();
+    // await sequelize.authenticate();
     console.log("Database connected successfully");
 
     await sequelize.sync();

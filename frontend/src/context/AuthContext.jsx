@@ -1,131 +1,3 @@
-// 'use client'
-// import { createContext, useState, useContext, useEffect } from "react";
-// import { registerRequest, loginRequest, verifyTokenRequest } from "../api/auth";
-// import Cookies from "js-cookie";
-
-// export const AuthContext = createContext();
-
-// export const useAuth = () => {
-//   const context = useContext(AuthContext);
-//   if (!context) {
-//     throw new Error("El useAuth debe estar dentro de AuthProvider");
-//   }
-//   return context;
-// };
-
-// export const AuthProvider = ({ children }) => {
-//   const [user, setUser] = useState(null);
-//   const [isAuthenticated, setIsAuthenticated] = useState(false);
-//   const [errors, setErrors] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [isEmailVerified, setIsEmailVerified] = useState(false);
-
-//   const signup = async (user) => {
-//     try {
-//       const res = await registerRequest(user);
-//       setErrors([res.data.message]);
-//     } catch (error) {
-//       setErrors(error.response.data);
-//     }
-//   };
-
-//   const signin = async (user) => {
-//     try {
-//       const res = await loginRequest(user);
-//       console.log(res);
-//       setIsAuthenticated(true);
-//       setUser(res.data);
-//       console.log(res.data, "este es el usuario");
-
-//     } catch (error) {
-//       if (Array.isArray(error.response.data)) {
-//         return setErrors(error.response.data);
-//       }
-//       setErrors([error.response.data.message]);
-//     }
-//   };
-
-//   const logout = () => {
-//     Cookies.remove("token");
-//     setIsAuthenticated(false);
-//     setUser(null)
-//   }
-
-//   useEffect(() => {
-//     if (errors.length > 0) {
-//       const timer = setTimeout(() => {
-//         setErrors([]);
-//       }, 3000);
-//       return () => clearTimeout(timer);
-//     }
-//   }, [errors]);
-
-//   useEffect(() => {
-//     async function checkLogin() {
-//       const cookies = Cookies.get();
-
-//       if (!cookies.token) {
-//         setIsAuthenticated(false);
-//         setLoading(false)
-//         return setUser(null);
-//       }
-//       try {
-//         const res = await verifyTokenRequest(cookies.token);
-//         if (!res.data) {
-//           setIsAuthenticated(false);
-//           setLoading(false);
-//           return;
-//         }
-
-//         setIsAuthenticated(true);
-//         setUser(res.data);
-//         setLoading(false)
-//       } catch (error) {
-//         setIsAuthenticated(false);
-//         setUser(null);
-//         setLoading(false)
-//       }
-//     }
-//     checkLogin();
-//   }, []);
-
-// /*   const requestPasswordReset = async (email) => {
-//     try {
-//       const res = await requestPasswordResetRequest(email);
-//       setErrors([res.data.message]);  // Mensaje de éxito
-//     } catch (error) {
-//       setErrors([error.response.data.message || 'Hubo un error al solicitar el restablecimiento']);
-//     }
-//   }; */
-
-//   const resetPassword = async (token, password) => {
-//     try {
-//       const res = await resetPasswordRequest(token, password);
-//       setErrors([res.data.message]);  // Mensaje de éxito
-//     } catch (error) {
-//       setErrors([error.response.data.message || 'Hubo un error al restablecer la contraseña']);
-//     }
-//   };
-
-//   return (
-//     <AuthContext.Provider
-//       value={{
-//         signup,
-//         signin,
-//         logout,
-//         loading,
-//         user,
-//         isAuthenticated,
-//         errors,
-//         isEmailVerified,
-//         setIsEmailVerified,
-//       }}
-//     >
-//       {children}
-//     </AuthContext.Provider>
-//   );
-// };
-
 "use client";
 import { createContext, useState, useContext, useEffect } from "react";
 import { registerRequest, loginRequest, verifyTokenRequest } from "../api/auth";
@@ -146,7 +18,6 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [errors, setErrors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isEmailVerified, setIsEmailVerified] = useState(false);
 
   const signup = async (user) => {
     try {
@@ -177,10 +48,6 @@ export const AuthProvider = ({ children }) => {
         });
       }
 
-      // Opción B: Si prefieres usar la cookie que ya está establecida por el backend
-      // No necesitas establecer la cookie manualmente, ya está en 'jwt'
-
-      // Asegurarse de que tenemos los datos del usuario
       const userData = {
         id: res.data.usuario.id,
         username: res.data.usuario.username,
@@ -223,7 +90,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    Cookies.remove("token", { path: "/" }); // Importante especificar el mismo path
+    Cookies.remove("token", { path: "/" });
+    Cookies.remove("jwt", { path: "/" }); // También limpiar jwt si existe
     setIsAuthenticated(false);
     setUser(null);
   };
@@ -239,22 +107,29 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     async function checkLogin() {
-      const token = Cookies.get("token");
+      // Verificar tanto token como jwt (dependiendo de lo que use tu backend)
+      const token = Cookies.get("token") || Cookies.get("jwt");
 
       if (!token) {
+        console.log("No hay token disponible");
         setIsAuthenticated(false);
         setLoading(false);
-        return setUser(null);
+        setUser(null);
+        return;
       }
 
       try {
+        console.log("Verificando token:", token);
         const res = await verifyTokenRequest(token);
-        console.log("Verificación de token:", res);
+        console.log("Verificación de token exitosa:", res);
 
         if (!res.data) {
+          console.log("Respuesta sin datos, limpiando cookies");
           Cookies.remove("token", { path: "/" });
+          Cookies.remove("jwt", { path: "/" });
           setIsAuthenticated(false);
           setLoading(false);
+          setUser(null);
           return;
         }
 
@@ -262,7 +137,9 @@ export const AuthProvider = ({ children }) => {
         const userData = {
           id: res.data.id || res.data.user?.id,
           username: res.data.username || res.data.user?.username,
-          email: res.data.email || res.data.user?.email,
+          email: res.data.email || res.data.user?.email || res.data.correo,
+          nombre: res.data.nombre || res.data.user?.nombre,
+          rol: res.data.rol || res.data.user?.rol,
           ...res.data.user,
           ...res.data,
         };
@@ -274,13 +151,23 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
       } catch (error) {
         console.error("Error verificando token:", error);
-        // Si hay un error, eliminamos la cookie
+        
+        // Solo mostrar error si no es 401 (token expirado es normal)
+        if (error.response?.status !== 401) {
+          console.error("Error inesperado:", error.response?.data);
+        } else {
+          console.log("Token expirado o inválido, limpiando sesión");
+        }
+        
+        // Limpiar cookies y estado
         Cookies.remove("token", { path: "/" });
+        Cookies.remove("jwt", { path: "/" });
         setIsAuthenticated(false);
         setUser(null);
         setLoading(false);
       }
     }
+    
     checkLogin();
   }, []);
 
@@ -306,8 +193,6 @@ export const AuthProvider = ({ children }) => {
         user,
         isAuthenticated,
         errors,
-        isEmailVerified,
-        setIsEmailVerified,
         resetPassword,
       }}
     >

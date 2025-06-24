@@ -30,7 +30,6 @@ module.exports = (sequelize, DataTypes) => {
       ),
       defaultValue: "pendiente",
     },
-    // En el modelo EntregaProducto
     unidadesSeriadas: {
       type: DataTypes.JSON,
       allowNull: true,

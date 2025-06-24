@@ -35,13 +35,13 @@ export const EntregaProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await createEntregaRequest(entrega);
-      setEntregas((prevEntregas) => [...prevEntregas, response.data]);
+      setEntregas((prevEntregas) => [...prevEntregas, response.data.data]);
     } catch (error) {
       setError(error);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <EntregaContext.Provider

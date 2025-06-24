@@ -11,4 +11,6 @@ router.get("/stant/:id", StantController.findOne);
 // Actualizar un estante por ID
 router.put("/stant/:id", StantController.update);
 
+router.delete("/stant/:id", StantController.delete)
+
 module.exports = router;

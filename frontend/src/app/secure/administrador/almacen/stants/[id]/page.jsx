@@ -66,10 +66,10 @@ export default function UsuariosTabla() {
       const updateItemsPerPage = () => {
         if (window.innerWidth >= 1536) {
           // 2xl
-          setItemsPerPage(10);
+          setItemsPerPage(8);
         } else if (window.innerWidth >= 1024) {
           // lg
-          setItemsPerPage(8);
+          setItemsPerPage(5);
         } else if (window.innerWidth >= 640) {
           // sm
           setItemsPerPage(5);
@@ -118,6 +118,7 @@ export default function UsuariosTabla() {
       if (!producto) return false;
 
       return safeToLowerCase(producto.descripcion).includes(lowercaseQuery);
+      // || safeToLowerCase(producto.Subcategorium.nombre).includes(lowercaseQuery)
     });
   }, [searchQuery, productos]);
 
@@ -333,12 +334,13 @@ export default function UsuariosTabla() {
                 {/* Encabezado de tabla - mantener igual */}
                 <thead className="text-xs text-gray-400 uppercase bg-slate-900 border-b border-slate-500">
                   <tr>
-                    <th className="px-4 py-3 md:px-6 md:py-4">Nombre</th>
-                    <th className="px-4 py-3 md:px-6 md:py-4">Modelo</th>
-                    <th className="px-4 py-3 md:px-6 md:py-4">Categoria</th>
-                    <th className="px-4 py-3 md:px-6 md:py-4">SubCategoria</th>
-                    <th className="px-4 py-3 md:px-6 md:py-4">Stock</th>
-                    <th className="px-4 py-3 md:px-6 md:py-4">Ajustar Stock</th>
+                    <th className="px-2 py-3 md:px-6 md:py-4">Nombre</th>
+                    <th className="px-2 py-3 md:px-6 md:py-4">Modelo</th>
+                    <th className="px-2 py-3 md:px-6 md:py-4">Marca</th>
+                    <th className="px-2 py-3 md:px-6 md:py-4">Categoria</th>
+                    <th className="px-2 py-3 md:px-6 md:py-4">SubCategoria</th>
+                    <th className="px-2 py-3 md:px-6 md:py-4">Stock</th>
+                    <th className="px-2 py-3 md:px-6 md:py-4">Ajustar Stock</th>
                   </tr>
                 </thead>
 
@@ -349,24 +351,27 @@ export default function UsuariosTabla() {
                       className=" border-b border-slate-700"
                       key={producto.id}
                     >
-                      <td className="px-4 py-2 md:px-6 md:py-4">
+                      <td className="px-2 py-2 md:px-6 md:py-4 whitespace-nowrap">
                         {producto.descripcion || "-"}
                       </td>
-                      <td className="px-4 py-2 md:px-6 md:py-4">
+                      <td className="px-2 py-2 md:px-6 md:py-4 whitespace-nowrap">
                         {producto.modelo || "-"}
                       </td>
-                      <td className="px-4 py-2 md:px-6 md:py-4">
+                      <td className="px-2 py-2 md:px-6 md:py-4 whitespace-nowrap">
+                        {producto.marca || "-"}
+                      </td>
+                      <td className="px-2 py-2 md:px-6 md:py-4 whitespace-nowrap">
                         {producto.Subcategorium?.Categorium?.nombre ||
                           producto.Categorium?.nombre ||
                           "-"}
                       </td>
-                      <td className="px-4 py-2 md:px-6 md:py-4">
+                      <td className="px-2 py-2 md:px-6 md:py-4 whitespace-nowrap">
                         {producto.Subcategorium?.nombre || ""}
                       </td>
-                      <td className="px-4 py-2 md:px-6 md:py-4">
+                      <td className="px-2 py-2 md:px-6 md:py-4">
                         {producto.stock || "0"}
                       </td>
-                      <td className="px-4 py-1 ">
+                      <td className="px-2 py-1 ">
                         <button
                           onClick={() => openModalStock(producto)}
                           className="font-bold py-1 px-3 rounded"

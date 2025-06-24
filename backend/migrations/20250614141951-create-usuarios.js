@@ -1,11 +1,13 @@
+'use strict';
+
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable('Usuarios', {
       id: {
-        type: Sequelize.INTEGER,
+        allowNull: false,
         autoIncrement: true,
         primaryKey: true,
-        allowNull: false,
+        type: Sequelize.INTEGER,
       },
       nombre: {
         type: Sequelize.STRING,
@@ -21,8 +23,8 @@ module.exports = {
       },
       username: {
         type: Sequelize.STRING,
-        unique: true,
         allowNull: true,
+        unique: true,
       },
       correo: {
         type: Sequelize.STRING,
@@ -35,17 +37,16 @@ module.exports = {
       rol: {
         type: Sequelize.STRING,
         allowNull: false,
-        validate: {
-          isIn: [['administrador', 'almacenista', 'talento humano']],
-        },
       },
       createdAt: {
-        type: Sequelize.DATE,
         allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.fn('NOW'),
       },
       updatedAt: {
-        type: Sequelize.DATE,
         allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.fn('NOW'),
       },
     });
   },

@@ -141,7 +141,7 @@ const StantController = {
       
       return res.status(404).json({
         success: false,
-        message: 'Estante no encontrado'
+        message: 'Estante no encontrado' 
       });
     } catch (error) {
       return res.status(500).json({

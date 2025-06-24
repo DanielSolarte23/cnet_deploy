@@ -11,7 +11,7 @@ router.put("/productos/:id", ProductoController.update); // Actualizar un produc
 router.put("/productos/:id/stock", ProductoController.ajustarStock); // Actualizar stock de un producto por ID
 router.get("/products/stock/bajo", ProductoController.getStockBajo); // Obtener productos con stock bajo
 router.delete("/productos/:id", ProductoController.delete); // Eliminar un producto por ID
-router.get("/products/statnt/:stantId", ProductoController.findByStant); // Obtener productos por stantId
+router.get("/products/stant/:stantId", ProductoController.findByStant); // Obtener productos por stantId
 router.get("/products/:id/unidades", ProductoController.findUnidades); // Obtener unidades de un producto por ID
 
 module.exports = router;

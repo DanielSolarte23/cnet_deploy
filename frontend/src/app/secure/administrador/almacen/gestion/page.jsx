@@ -31,7 +31,7 @@ export default function GestionPage() {
   const imprimirActa = async (entrega) => {
     try {
       const response = await axios.get(
-        `http://localhost:3004/api/entregas/${entrega.id}/acta/preview`,
+        `http://172.16.110.74:3004/api/entregas/${entrega.id}/acta/preview`,
         {
           headers: {
             Accept: "text/html",
@@ -46,7 +46,7 @@ export default function GestionPage() {
       if (!htmlContent.includes("<base")) {
         htmlContent = htmlContent.replace(
           /<head>/i,
-          `<head><base href="http://localhost:3004/">`
+          `<head><base href="http://172.16.110.74:3004">`
         );
       }
 
