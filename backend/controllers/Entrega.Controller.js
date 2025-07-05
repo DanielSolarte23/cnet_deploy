@@ -184,7 +184,7 @@ const EntregaController = {
             model: Personal,
             as: "tecnicoData",
             attributes: ["id", "nombre", "cedula", "cargo"],
-          },
+          }, 
         ],
         order: [["fecha", "DESC"]],
       });

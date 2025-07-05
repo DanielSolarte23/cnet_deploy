@@ -30,7 +30,7 @@ module.exports = (sequelize, DataTypes) => {
     Entrega.belongsTo(models.Personal, {
       foreignKey: "personalId",
       as: "tecnicoData",
-      allowNull: true // Puede ser nulo como solicitaste
+      allowNull: true 
     });
   };
 

@@ -290,7 +290,7 @@ const SubcategoriaController = {
 
       // Verificar si hay productos asociados
       const productosAsociados = await Producto.count({
-        where: { SubcategoriaId: id },
+        where: { SubcategoriumId: id },
       });
 
       if (productosAsociados > 0) {
