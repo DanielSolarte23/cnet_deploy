@@ -114,7 +114,7 @@ const ReintegroController = {
 
               // Actualizar el estado de la unidad si existe la tabla ProductoUnidad
               if (unidad) {
-                unidad.estado = "devuelto";
+                unidad.estado = "reintegrado";
                 await unidad.save({ transaction: t });
               }
             }
@@ -198,7 +198,7 @@ const ReintegroController = {
               }
 
               // Actualizar el estado de la unidad
-              unidad.estado = "devuelto";
+              unidad.estado = 'reintegrado';
               await unidad.save({ transaction: t });
             }
 
@@ -334,7 +334,7 @@ const ReintegroController = {
                   {
                     model: db.ProductoUnidad,
                     attributes: ["id", "serial"],
-                    required: false, // LEFT JOIN para que aparezcan productos sin unidades seriadas
+                    required: false,
                   },
                 ],
               },

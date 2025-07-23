@@ -60,8 +60,8 @@ const EntregaController = {
             }
 
             // Aquí podrías actualizar el estado de la unidad si es necesario
-            // Por ejemplo: unidad.estado = 'asignado';
-            // await unidad.save({ transaction: t });
+            unidad.estado = 'instalacion';
+            await unidad.save({ transaction: t });
           }
 
           // Crear el registro en EntregaProducto con la cantidad basada en las unidades seriadas
@@ -130,9 +130,9 @@ const EntregaController = {
             model: EntregaProducto,
             include: [{ model: Producto }],
             // Asegurar que se incluyan todos los campos, incluyendo unidadesSeriadas
-            attributes: { 
-              include: ['unidadesSeriadas'] // Explícitamente incluir el campo
-            }
+            attributes: {
+              include: ["unidadesSeriadas"], // Explícitamente incluir el campo
+            },
           },
           {
             model: Usuario,
@@ -171,14 +171,14 @@ const EntregaController = {
             model: EntregaProducto,
             include: [{ model: Producto }],
             // Asegurar que se incluyan todos los campos, incluyendo unidadesSeriadas
-            attributes: { 
-              include: ['unidadesSeriadas'] // Explícitamente incluir el campo
-            }
+            // attributes: {
+            //   include: ["unidadesSeriadas"], // Explícitamente incluir el campo
+            // },
           },
           {
             model: Usuario,
             as: "almacenistaData",
-            attributes: ["id", "nombre", "username"],
+            attributes: ["id", "nombre"],
           },
           {
             model: Personal,
@@ -189,10 +189,56 @@ const EntregaController = {
         order: [["fecha", "DESC"]],
       });
 
+      // Enriquecer los datos con los seriales
+      const entregasEnriquecidas = await Promise.all(
+        entregas.map(async (entrega) => {
+          const entregaJSON = entrega.toJSON();
+
+          // Procesar cada producto de la entrega
+          if (entregaJSON.EntregaProductos) {
+            entregaJSON.EntregaProductos = await Promise.all(
+              entregaJSON.EntregaProductos.map(async (entregaProducto) => {
+                // Si tiene unidades seriadas, obtener los seriales
+                if (
+                  entregaProducto.unidadesSeriadas &&
+                  Array.isArray(entregaProducto.unidadesSeriadas)
+                ) {
+                  // Obtener los seriales de las unidades
+                  const unidadesConSerial = await db.ProductoUnidad.findAll({
+                    where: {
+                      id: entregaProducto.unidadesSeriadas,
+                    },
+                    attributes: ["id", "serial"],
+                    raw: true,
+                  });
+
+                  // Crear un mapa para acceso rápido
+                  const serialMap = unidadesConSerial.reduce((map, unidad) => {
+                    map[unidad.id] = unidad.serial;
+                    return map;
+                  }, {});
+
+                  // Enriquecer los datos manteniendo la estructura original
+                  entregaProducto.unidadesSeriadasDetalle =
+                    entregaProducto.unidadesSeriadas.map((id) => ({
+                      id: id,
+                      serial: serialMap[id] || "Serial no encontrado",
+                    }));
+                }
+
+                return entregaProducto;
+              })
+            );
+          }
+
+          return entregaJSON;
+        })
+      );
+
       return res.status(200).json({
         success: true,
-        count: entregas.length,
-        data: entregas,
+        count: entregasEnriquecidas.length,
+        data: entregasEnriquecidas,
       });
     } catch (error) {
       return res.status(500).json({
@@ -203,7 +249,6 @@ const EntregaController = {
     }
   },
 
-  // Obtener una entrega por ID
   async findOne(req, res) {
     try {
       const { id } = req.params;
@@ -212,15 +257,11 @@ const EntregaController = {
           {
             model: EntregaProducto,
             include: [{ model: Producto }],
-            // Asegurar que se incluyan todos los campos, incluyendo unidadesSeriadas
-            attributes: { 
-              include: ['unidadesSeriadas'] // Explícitamente incluir el campo
-            }
           },
           {
             model: Usuario,
             as: "almacenistaData",
-            attributes: ["id", "nombre", "username"],
+            attributes: ["id", "nombre"],
           },
           {
             model: Personal,
@@ -237,9 +278,44 @@ const EntregaController = {
         });
       }
 
+      const entregaJSON = entrega.toJSON();
+
+      // Enriquecer productos con seriales
+      if (entregaJSON.EntregaProductos) {
+        entregaJSON.EntregaProductos = await Promise.all(
+          entregaJSON.EntregaProductos.map(async (entregaProducto) => {
+            if (
+              entregaProducto.unidadesSeriadas &&
+              Array.isArray(entregaProducto.unidadesSeriadas)
+            ) {
+              const unidadesConSerial = await db.ProductoUnidad.findAll({
+                where: {
+                  id: entregaProducto.unidadesSeriadas,
+                },
+                attributes: ["id", "serial"],
+                raw: true,
+              });
+
+              const serialMap = unidadesConSerial.reduce((map, unidad) => {
+                map[unidad.id] = unidad.serial;
+                return map;
+              }, {});
+
+              entregaProducto.unidadesSeriadasDetalle =
+                entregaProducto.unidadesSeriadas.map((id) => ({
+                  id,
+                  serial: serialMap[id] || "Serial no encontrado",
+                }));
+            }
+
+            return entregaProducto;
+          })
+        );
+      }
+
       return res.status(200).json({
         success: true,
-        data: entrega,
+        data: entregaJSON,
       });
     } catch (error) {
       return res.status(500).json({
@@ -292,9 +368,9 @@ const EntregaController = {
             model: EntregaProducto,
             include: [{ model: Producto }],
             // Asegurar que se incluyan todos los campos, incluyendo unidadesSeriadas
-            attributes: { 
-              include: ['unidadesSeriadas'] // Explícitamente incluir el campo
-            }
+            attributes: {
+              include: ["unidadesSeriadas"], // Explícitamente incluir el campo
+            },
           },
           {
             model: Usuario,
@@ -339,9 +415,9 @@ const EntregaController = {
               model: EntregaProducto,
               include: [{ model: Producto }],
               // Asegurar que se incluyan todos los campos, incluyendo unidadesSeriadas
-              attributes: { 
-                include: ['unidadesSeriadas'] // Explícitamente incluir el campo
-              }
+              attributes: {
+                include: ["unidadesSeriadas"], // Explícitamente incluir el campo
+              },
             },
             {
               model: Usuario,

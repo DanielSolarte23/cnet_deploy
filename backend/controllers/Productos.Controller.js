@@ -25,6 +25,10 @@ const verificarStockBajo = async (producto) => {
 
       // También podríamos enviar un correo electrónico o una notificación push aquí
       /*  console.log(`Notificación creada: Stock bajo para ${producto.descripcion}`); */
+      if (producto.stock == 0) {
+        producto.estado = "agotado";
+        await producto.save();
+      }
     }
   } catch (error) {
     console.error("Error al crear notificación de stock:", error);
@@ -677,11 +681,15 @@ const ProductoController = {
     }
   },
 
-  // Obtener productos con stock bajo
   async getStockBajo(req, res) {
     try {
       const productos = await Producto.findAll({
-        where: db.sequelize.literal("stock <= stockMinimo"),
+        where: {
+          [Op.and]: [
+            db.sequelize.literal("stock <= stockMinimo"),
+            { isStockLow: false },
+          ],
+        },
         include: [
           { model: Subcategoria, include: [Categoria] },
           { model: Stant },

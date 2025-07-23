@@ -84,7 +84,7 @@ export function ProductosProvider({ children }) {
     try {
       const res = await getStockBajoRequest();
       setProductos(res.data.data);
-      console.log("Datos recibidos:", res.data.data);
+      // console.log("Datos recibidos:", res.data.data);
     } catch (error) {
       handleError(error, "Error al cargar productos con stock bajo");
       console.log(error);

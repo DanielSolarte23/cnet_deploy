@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     observaciones: DataTypes.TEXT,
     estado: {
-      type: DataTypes.ENUM('pendiente', 'entregada', 'parcialmente_devuelta', 'completamente_devuelta'),
+      type: DataTypes.ENUM('pendiente', '', 'parcialmente_devuelta', 'completamente_devuelta'),
       defaultValue: 'pendiente'
     },
     fechaEstimadaDevolucion: DataTypes.DATE

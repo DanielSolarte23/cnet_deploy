@@ -1,8 +1,8 @@
-'use strict';
+"use strict";
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('Productos', {
+    await queryInterface.createTable("Productos", {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -31,7 +31,7 @@ module.exports = {
       },
       unidadMedida: {
         type: Sequelize.STRING,
-        defaultValue: 'unidad',
+        defaultValue: "unidad",
       },
       stock: {
         type: Sequelize.INTEGER,
@@ -44,11 +44,11 @@ module.exports = {
       },
       fechaIngreso: {
         type: Sequelize.DATE,
-        defaultValue: Sequelize.fn('NOW'),
+        defaultValue: Sequelize.fn("NOW"),
       },
       estado: {
-        type: Sequelize.ENUM('disponible', 'agotado', 'baja'),
-        defaultValue: 'disponible',
+        type: Sequelize.ENUM("disponible", "agotado", "baja"),
+        defaultValue: "disponible",
       },
       notas: {
         type: Sequelize.TEXT,
@@ -58,37 +58,43 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: true,
         references: {
-          model: 'Stants',
-          key: 'id',
+          model: "Stants",
+          key: "id",
         },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL',
+        onUpdate: "CASCADE",
+        onDelete: "SET NULL",
       },
       SubcategoriaId: {
         type: Sequelize.INTEGER,
         allowNull: true,
         references: {
-          model: 'Subcategorias',
-          key: 'id',
+          model: "Subcategorias",
+          key: "id",
         },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL',
+        onUpdate: "CASCADE",
+        onDelete: "SET NULL",
+      },
+      isStockLow: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
       },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
-        defaultValue: Sequelize.fn('NOW'),
+        defaultValue: Sequelize.fn("NOW"),
       },
       updatedAt: {
         allowNull: false,
         type: Sequelize.DATE,
-        defaultValue: Sequelize.fn('NOW'),
+        defaultValue: Sequelize.fn("NOW"),
       },
     });
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('Productos');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Productos_estado";');
+    await queryInterface.dropTable("Productos");
+    await queryInterface.sequelize.query(
+      'DROP TYPE IF EXISTS "enum_Productos_estado";'
+    );
   },
 };

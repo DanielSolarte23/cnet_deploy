@@ -12,6 +12,7 @@ import FormularioEntrega from "@/components/secure/EntregaForm";
 import html2pdf from "html2pdf.js";
 import ActaPDFAislada from "@/components/secure/ActaEntregaProductos";
 import axios from "axios";
+import { ReintegroModal } from "@/components/secure/almacenista/FormEntrega";
 
 export default function GestionPage() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -21,7 +22,8 @@ export default function GestionPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [modalStock, setModalStock] = useState(false);
   const [entregaSeleccionada, setEntregaSeleccionada] = useState(null);
-
+  const [modalOpenReintegro, setModalOpenReintegro] = useState(false);
+  const [entregaIdParaReintegro, setEntregaIdParaReintegro] = useState(null);
   const { getEntregas, entregas, loading, error } = useEntregas();
 
   useEffect(() => {
@@ -79,6 +81,32 @@ export default function GestionPage() {
     } catch (error) {
       console.error("Error al obtener la vista previa del acta:", error);
       showNotification("Error al generar el acta para impresión", "error");
+    }
+  };
+
+  const abrirModalReintegro = (entregaId) => {
+    setModalOpenReintegro(true);
+    setEntregaIdParaReintegro(entregaId);
+  };
+
+  const getEstadoClase = (estado) => {
+    switch (estado) {
+      case "pendiente":
+        return "bg-yellow-100 text-yellow-800";
+      case "expirada":
+        return "bg-red-100 text-red-800";
+      case "parcialmente_devuelta":
+        return "bg-blue-100 text-blue-800";
+      case "completamente_devuelta":
+        return "bg-green-100 text-green-800";
+      case "YES":
+        return "bg-indigo-100 text-indigo-800";
+      case "":
+      case null:
+      case undefined:
+        return "bg-gray-100 text-gray-500";
+      default:
+        return "bg-gray-200 text-gray-800";
     }
   };
 
@@ -232,6 +260,36 @@ export default function GestionPage() {
     return <LoadingScreen />;
   }
 
+  const handleSubmitReintegro = async (formData) => {
+    try {
+      const response = await fetch("http://172.16.110.74:3004/api/reintegro", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Error al crear el reintegro");
+      }
+
+      const result = await response.json();
+      console.log("Reintegro creado:", result);
+
+      // Mostrar notificación de éxito
+      showNotification("Reintegro creado exitosamente", "success");
+
+      // Refrescar los datos
+      getEntregas();
+    } catch (error) {
+      console.error("Error:", error);
+      showNotification(error.message || "Error al crear el reintegro", "error");
+      throw error; // Re-lanzar el error para que el modal lo maneje
+    }
+  };
+
   return (
     <div className="relative flex flex-col bg-slate-950 h-full border border-slate-700 rounded-lg ">
       {notification.isVisible && (
@@ -286,7 +344,7 @@ export default function GestionPage() {
                   Entregado a
                 </th>
                 <th className="px-4 py-3 md:px-6 md:py-4 text-center">
-                  Entregado por
+                  Estado
                 </th>
                 <th className="px-4 py-3 md:px-6 md:py-4 text-center">
                   Cantidad Productos
@@ -319,8 +377,15 @@ export default function GestionPage() {
                     {entrega.tecnicoData?.nombre || ""}
                   </td>
                   <td className="px-4 py-1 md:px-6 md:py-4 text-center">
-                    {entrega.almacenistaData?.nombre || ""}
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${getEstadoClase(
+                        entrega.estado
+                      )}`}
+                    >
+                      {entrega.estado || "Sin estado"}
+                    </span>
                   </td>
+
                   <td className="px-4 py-1 md:px-6 md:py-4 text-center">
                     {entrega.EntregaProductos?.length || ""}
                   </td>
@@ -335,7 +400,12 @@ export default function GestionPage() {
                   </td>
                   <td className="px-4 py-1 text-center">
                     <button>
-                      <i className="fa-solid fa-repeat"></i>
+                      <i
+                        onClick={() => {
+                          abrirModalReintegro(entrega.id); // Cambiar aquí: pasar entrega.id en lugar del objeto completo
+                        }}
+                        className="fa-solid fa-repeat"
+                      ></i>
                     </button>
                   </td>
                 </tr>
@@ -436,6 +506,18 @@ export default function GestionPage() {
           entrega={productoSeleccionado}
           handleCloseModalStock={handleCloseModalStock}
           showNotification={showNotification}
+        />
+      )}
+
+      {modalOpenReintegro && (
+        <ReintegroModal
+          entrega={entregaIdParaReintegro}
+          isOpen={modalOpenReintegro}
+          onClose={() => {
+            setModalOpenReintegro(false);
+            setEntregaIdParaReintegro(null);
+          }}
+          onSubmit={handleSubmitReintegro}
         />
       )}
     </div>

@@ -14,7 +14,7 @@ module.exports = {
         unique: true
       },
       estado: {
-        type: Sequelize.ENUM('nuevo', 'usado', 'baja'),
+        type: Sequelize.ENUM('nuevo', 'usado', 'baja', 'instalacion','instalado','reintegrado'),
         defaultValue: 'nuevo'
       },
       fechaIngreso: {

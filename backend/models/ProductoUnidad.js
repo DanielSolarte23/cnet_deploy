@@ -6,7 +6,7 @@ module.exports = (sequelize, DataTypes) => {
         unique: true
       },
       estado: {
-        type: DataTypes.ENUM('nuevo', 'usado', 'baja'),
+        type: DataTypes.ENUM('nuevo', 'usado', 'baja', 'instalacion','instalado','reintegrado'),
         defaultValue: 'nuevo'
       },
       fechaIngreso: {
