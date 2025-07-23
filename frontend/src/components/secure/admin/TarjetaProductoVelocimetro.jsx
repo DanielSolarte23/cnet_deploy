@@ -164,6 +164,8 @@ export default function TarjetaProductoAdaptativa({ producto }) {
         <span className={`px-2 py-0.5 rounded-full ${item.estado === 'disponible' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
           {item.estado.charAt(0).toUpperCase() + item.estado.slice(1)}
         </span>
+
+        <span className='text-red-600'><i className='fa-solid fa-trash-can'></i></span>
       </div>
     </div>
   );

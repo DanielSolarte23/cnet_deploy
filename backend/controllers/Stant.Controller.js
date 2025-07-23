@@ -1,6 +1,7 @@
 const db = require('../models');
 const Stant = db.Stant;
 const Producto = db.Producto;
+const { fn, col } = require("sequelize");
 
 const StantController = {
   // Crear un nuevo estante
@@ -22,31 +23,36 @@ const StantController = {
     }
   },
 
-  // Obtener todos los estantes
-  async findAll(req, res) {
-    try {
-      const stants = await Stant.findAll({
-        include: [
-          {
-            model: Producto,
-            attributes: ['id', 'descripcion', 'stock']
-          }
-        ]
-      });
-      
-      return res.status(200).json({
-        success: true,
-        count: stants.length,
-        data: stants
-      });
-    } catch (error) {
-      return res.status(500).json({
-        success: false,
-        message: 'Error al obtener los estantes',
-        error: error.message
-      });
-    }
-  },
+async findAll(req, res) {
+  try {
+    const stants = await Stant.findAll({
+      attributes: [
+        'id', 'nombre', // o los atributos del estante que realmente necesites
+        [fn('COUNT', col('Productos.id')), 'cantidadProductos']
+      ],
+      include: [
+        {
+          model: Producto,
+          attributes: [],
+        }
+      ],
+      group: ['Stant.id']
+    });
+
+    return res.status(200).json({
+      success: true,
+      count: stants.length,
+      data: stants
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener los estantes',
+      error: error.message
+    });
+  }
+},
+
 
   // Obtener un estante por ID
   async findOne(req, res) {

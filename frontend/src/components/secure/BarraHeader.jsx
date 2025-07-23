@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import NotificacionesModal from "../auth/NotificacionesModal";
 
@@ -8,6 +9,8 @@ function BarraHeader({ handleToggle, isOpen, isSmallScreen }) {
   const { isAuthenticated, logout, user } = useAuth();
   const [modal, setModal] = useState(false);
   const [modalNotificaciones, setModalNotificaciones] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter();
 
   const handleToggleModal = () => {
     setModal((prev) => !prev);
@@ -15,6 +18,24 @@ function BarraHeader({ handleToggle, isOpen, isSmallScreen }) {
 
   const handleToggleModalNotificaciones = () => {
     setModalNotificaciones((prev) => !prev);
+  };
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      setModal(false); // Cerrar el modal inmediatamente
+      
+      // Ejecutar logout
+      logout();
+      
+      // Redirigir manualmente al login
+      router.push("/");
+      
+    } catch (error) {
+      console.error("Error durante el logout:", error);
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -45,7 +66,9 @@ function BarraHeader({ handleToggle, isOpen, isSmallScreen }) {
             >
               <i className="fa-solid fa-bell text-xl"></i>
             </button>
-            {modalNotificaciones && <NotificacionesModal className={`absolute top-12 -left-52`} />}
+            {modalNotificaciones && (
+              <NotificacionesModal className={`absolute top-12 -left-52`} />
+            )}
           </div>
           <div className="flex gap-2 items-center">
             <div className="border border-slate-700 rounded-full p-2 flex justify-center items-center bg-verde">
@@ -60,24 +83,33 @@ function BarraHeader({ handleToggle, isOpen, isSmallScreen }) {
                 className="fa-solid fa-chevron-down text-verde-dos cursor-pointer"
               ></i>
               {modal && (
-                <ul className="bg-slate-900 absolute top-6 -left-36 p-5 border border-slate-600 rounded-lg text-verde-dos flex flex-col gap-2 shadow-md">
+                <ul className="bg-slate-900 absolute top-6 -left-36 p-5 border border-slate-600 rounded-lg text-verde-dos flex flex-col gap-2 shadow-md z-50">
                   <li className="flex justify-between items-center gap-2 cursor-pointer hover:text-verde transition-colors duration-200">
-                    Perfil <i className="fa-solid fa-user"></i>
-                  </li>
-                  <hr />
-                  <li className="whitespace-nowrap flex justify-between items-center gap-2 cursor-pointer hover:text-verde transition-colors duration-200">
-                    <Link
-                      className="flex justify-between items-center gap-2"
-                      href="/"
-                      onClick={() => {
-                        setTimeout(() => {
-                          logout();
-                        }, 500);
-                      }}
+                    <Link 
+                      href="/perfil" 
+                      className="flex justify-between items-center gap-2 w-full"
+                      onClick={() => setModal(false)}
                     >
-                      Cerrar Sesión
-                      <i className="fa-solid fa-right-to-bracket"></i>
+                      Perfil <i className="fa-solid fa-user"></i>
                     </Link>
+                  </li>
+                  <hr className="border-slate-600" />
+                  <li className="whitespace-nowrap flex justify-between items-center gap-2 cursor-pointer hover:text-verde transition-colors duration-200">
+                    <button
+                      className="flex justify-between items-center gap-2 w-full text-left"
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                    >
+                      {isLoggingOut ? (
+                        <>
+                          Cerrando... <i className="fa-solid fa-spinner fa-spin"></i>
+                        </>
+                      ) : (
+                        <>
+                          Cerrar Sesión <i className="fa-solid fa-right-to-bracket"></i>
+                        </>
+                      )}
+                    </button>
                   </li>
                 </ul>
               )}

@@ -18,6 +18,12 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [errors, setErrors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+
+  // Asegurar que estamos en el cliente antes de verificar cookies
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const signup = async (user) => {
     try {
@@ -38,23 +44,25 @@ export const AuthProvider = ({ children }) => {
         throw new Error("Respuesta de login inválida");
       }
 
-      // Opción A: Si modificaste el backend para enviar el token
+      // Guardar token con configuración más robusta
       if (res.data.token) {
+        // Configuración de cookies más específica para Next.js
         Cookies.set("token", res.data.token, {
           expires: 7,
           path: "/",
           secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
+          sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+          domain: process.env.NODE_ENV === "production" ? undefined : "localhost"
         });
       }
 
       const userData = {
         id: res.data.usuario.id,
         username: res.data.usuario.username,
-        email: res.data.usuario.correo, // Nota: el backend usa 'correo'
+        email: res.data.usuario.correo,
         nombre: res.data.usuario.nombre,
         rol: res.data.usuario.rol,
-        token: res.data.token || "from_cookie", // Indicador si viene de cookie
+        token: res.data.token || "from_cookie",
       };
 
       console.log("Datos del usuario a guardar:", userData);
@@ -65,6 +73,11 @@ export const AuthProvider = ({ children }) => {
         throw new Error("Datos de usuario incompletos");
       }
 
+      // Guardar en localStorage como backup (solo en cliente)
+      if (typeof window !== "undefined") {
+        localStorage.setItem("authUser", JSON.stringify(userData));
+      }
+
       setIsAuthenticated(true);
       setUser(userData);
 
@@ -72,9 +85,13 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Error en signin:", error);
 
-      // Limpiar cookies
+      // Limpiar cookies y localStorage
       Cookies.remove("token", { path: "/" });
-      Cookies.remove("jwt", { path: "/" }); // También limpiar la cookie del backend
+      Cookies.remove("jwt", { path: "/" });
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("authUser");
+      }
+      
       setIsAuthenticated(false);
       setUser(null);
 
@@ -89,11 +106,54 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    Cookies.remove("token", { path: "/" });
-    Cookies.remove("jwt", { path: "/" }); // También limpiar jwt si existe
-    setIsAuthenticated(false);
-    setUser(null);
+  const logout = async () => {
+    try {
+      // Limpiar cookies con diferentes configuraciones para asegurar eliminación completa
+      Cookies.remove("token", { path: "/" });
+      Cookies.remove("jwt", { path: "/" });
+      
+      // Intentar eliminar con diferentes configuraciones de dominio
+      Cookies.remove("token", { path: "/", domain: window.location.hostname });
+      Cookies.remove("jwt", { path: "/", domain: window.location.hostname });
+      
+      // Limpiar localStorage
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("authUser");
+        localStorage.clear(); // Limpiar todo el localStorage si es necesario
+      }
+      
+      // Actualizar estado
+      setIsAuthenticated(false);
+      setUser(null);
+      setLoading(false);
+      
+      // Opcional: Hacer una llamada al backend para invalidar el token
+      // await logoutRequest(); // Si tienes esta función en tu API
+      
+      console.log("Logout completado exitosamente");
+    } catch (error) {
+      console.error("Error durante el logout:", error);
+      // Asegurar que el estado se limpie incluso si hay error
+      setIsAuthenticated(false);
+      setUser(null);
+      setLoading(false);
+    }
+  };
+
+  // Función para verificar la autenticación desde múltiples fuentes
+  const checkAuthFromStorage = () => {
+    if (typeof window === "undefined") return null;
+    
+    try {
+      const storedUser = localStorage.getItem("authUser");
+      if (storedUser) {
+        return JSON.parse(storedUser);
+      }
+    } catch (error) {
+      console.error("Error parsing stored user:", error);
+      localStorage.removeItem("authUser");
+    }
+    return null;
   };
 
   useEffect(() => {
@@ -107,18 +167,40 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     async function checkLogin() {
-      // Verificar tanto token como jwt (dependiendo de lo que use tu backend)
-      const token = Cookies.get("token") || Cookies.get("jwt");
-
-      if (!token) {
-        console.log("No hay token disponible");
-        setIsAuthenticated(false);
-        setLoading(false);
-        setUser(null);
-        return;
-      }
+      // Solo ejecutar en el cliente
+      if (!isClient) return;
 
       try {
+        // Verificar token en cookies
+        const token = Cookies.get("token") || Cookies.get("jwt");
+        
+        if (!token) {
+          console.log("No hay token disponible");
+          
+          // Verificar si hay datos en localStorage como fallback
+          const storedUser = checkAuthFromStorage();
+          if (storedUser && storedUser.token && storedUser.token !== "from_cookie") {
+            console.log("Intentando restaurar desde localStorage");
+            try {
+              const res = await verifyTokenRequest(storedUser.token);
+              if (res.data) {
+                setIsAuthenticated(true);
+                setUser(storedUser);
+                setLoading(false);
+                return;
+              }
+            } catch (error) {
+              console.log("Token en localStorage inválido, limpiando");
+              localStorage.removeItem("authUser");
+            }
+          }
+          
+          setIsAuthenticated(false);
+          setLoading(false);
+          setUser(null);
+          return;
+        }
+
         console.log("Verificando token:", token);
         const res = await verifyTokenRequest(token);
         console.log("Verificación de token exitosa:", res);
@@ -127,6 +209,7 @@ export const AuthProvider = ({ children }) => {
           console.log("Respuesta sin datos, limpiando cookies");
           Cookies.remove("token", { path: "/" });
           Cookies.remove("jwt", { path: "/" });
+          localStorage.removeItem("authUser");
           setIsAuthenticated(false);
           setLoading(false);
           setUser(null);
@@ -140,11 +223,15 @@ export const AuthProvider = ({ children }) => {
           email: res.data.email || res.data.user?.email || res.data.correo,
           nombre: res.data.nombre || res.data.user?.nombre,
           rol: res.data.rol || res.data.user?.rol,
+          token: token,
           ...res.data.user,
           ...res.data,
         };
 
         console.log("Usuario verificado:", userData);
+
+        // Sincronizar localStorage con los datos verificados
+        localStorage.setItem("authUser", JSON.stringify(userData));
 
         setIsAuthenticated(true);
         setUser(userData);
@@ -159,9 +246,10 @@ export const AuthProvider = ({ children }) => {
           console.log("Token expirado o inválido, limpiando sesión");
         }
         
-        // Limpiar cookies y estado
+        // Limpiar cookies, localStorage y estado
         Cookies.remove("token", { path: "/" });
         Cookies.remove("jwt", { path: "/" });
+        localStorage.removeItem("authUser");
         setIsAuthenticated(false);
         setUser(null);
         setLoading(false);
@@ -169,7 +257,7 @@ export const AuthProvider = ({ children }) => {
     }
     
     checkLogin();
-  }, []);
+  }, [isClient]); // Dependencia de isClient
 
   const resetPassword = async (token, password) => {
     try {

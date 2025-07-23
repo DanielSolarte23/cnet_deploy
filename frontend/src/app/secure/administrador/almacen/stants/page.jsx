@@ -19,12 +19,7 @@ function Page() {
   const {
     stants,
     loading,
-    errors,
     getStants,
-    getStant,
-    createStant,
-    updateStant,
-    deleteStant,
   } = useStants();
 
   // Nombre del botón nuevo
@@ -65,27 +60,27 @@ function Page() {
     setOpenModal(false)
   }
 
-  useEffect(() => {
-    const cargarCantidades = async () => {
-      if (Array.isArray(stants) && stants.length > 0) {
-        const nuevasCantidades = {};
+  // useEffect(() => {
+  //   const cargarCantidades = async () => {
+  //     if (Array.isArray(stants) && stants.length > 0) {
+  //       const nuevasCantidades = {};
 
-        // Crear un array de promesas para todas las consultas
-        const promesas = stants.map(async (stant) => {
-          if (stant && stant.id) {
-            const cantidad = await getCantidadProductosStant(stant.id);
-            nuevasCantidades[stant.id] = cantidad;
-          }
-        });
+  //       // Crear un array de promesas para todas las consultas
+  //       const promesas = stants.map(async (stant) => {
+  //         if (stant && stant.id) {
+  //           const cantidad = await getCantidadProductosStant(stant.id);
+  //           nuevasCantidades[stant.id] = cantidad;
+  //         }
+  //       });
 
-        // Esperar a que todas las promesas se resuelvan
-        await Promise.all(promesas);
-        setCantidadesProductos(nuevasCantidades);
-      }
-    };
+  //       // Esperar a que todas las promesas se resuelvan
+  //       await Promise.all(promesas);
+  //       setCantidadesProductos(nuevasCantidades);
+  //     }
+  //   };
 
-    cargarCantidades();
-  }, [stants, getCantidadProductosStant]);
+  //   cargarCantidades();
+  // }, [stants, getCantidadProductosStant]);
 
   // Cargar estantes al montar el componente
   useEffect(() => {
@@ -225,7 +220,7 @@ function Page() {
               <div className="w-full text-center mb-3">
                 <h1 className="text-slate-200 font-semibold">{stant.nombre}</h1>
                 <p className="text-sm text-slate-400">
-                  Productos: {cantidadesProductos[stant.id] || 0}
+                  Productos: {stant.cantidadProductos || 0}
                 </p>
               </div>
 

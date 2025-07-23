@@ -14,7 +14,7 @@ import { usePersonal } from "@/context/PersonalContext";
 import { useProductos } from "@/context/ProductosContext";
 import { useAuth } from "@/context/AuthContext";
 import { useEntregas } from "@/context/EntregaContext";
-import axios from "@/api/axios"
+import axios from "@/api/axios";
 
 export default function FormularioEntrega({
   handleCloseModal,
@@ -30,18 +30,18 @@ export default function FormularioEntrega({
   // LLamado al contexto de Entregas
   const { createEntrega } = useEntregas();
 
-const [formData, setFormData] = useState({
-  entrega: {
-    fecha: new Date().toISOString().split("T")[0],
-    proyecto: "",
-    observaciones: "",
-    estado: "pendiente",
-    fechaEstimadaDevolucion: "",
-    almacenista: user?.id || null, // Cambiar de 1 fijo a user?.id
-    personalId: "",
-  },
-  productos: [],
-});
+  const [formData, setFormData] = useState({
+    entrega: {
+      fecha: new Date().toISOString().split("T")[0],
+      proyecto: "",
+      observaciones: "",
+      estado: "pendiente",
+      fechaEstimadaDevolucion: "",
+      almacenista: user?.id || null, // Cambiar de 1 fijo a user?.id
+      personalId: "",
+    },
+    productos: [],
+  });
 
   const [productoSeleccionado, setProductoSeleccionado] = useState({
     ProductoId: "",
@@ -61,7 +61,7 @@ const [formData, setFormData] = useState({
   useEffect(() => {
     // Cargar el personals al montar el componente
     if (getPersonal) {
-      getPersonal(); 
+      getPersonal();
     }
     if (getProductos) {
       getProductos();
@@ -69,7 +69,7 @@ const [formData, setFormData] = useState({
   }, []);
 
   // Cargar las unidades disponibles cuando se selecciona un producto
- useEffect(() => {
+  useEffect(() => {
     const cargarUnidadesDisponibles = async () => {
       if (
         !productoSeleccionado.ProductoId ||
@@ -80,11 +80,12 @@ const [formData, setFormData] = useState({
       }
 
       try {
-        const response = await axios.get(`/products/${productoSeleccionado.ProductoId}/unidades`);
+        const response = await axios.get(
+          `/products/${productoSeleccionado.ProductoId}/unidades`
+        );
 
         console.log("Unidades disponibles:", response.data.data);
         setUnidadesDisponibles(response.data.data || []); // Asegurar que sea un array
-
       } catch (error) {
         console.error("Error al cargar unidades:", error);
         setError("No se pudieron cargar las unidades del producto");
@@ -97,7 +98,7 @@ const [formData, setFormData] = useState({
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     setFormData({
       ...formData,
       entrega: {
@@ -265,71 +266,74 @@ const [formData, setFormData] = useState({
   };
 
   const handleSubmit = async () => {
-  // Validar que tenemos un usuario autenticado
-  if (!user?.id) {
-    setError("Usuario no autenticado");
-    return;
-  }
+    // Validar que tenemos un usuario autenticado
+    if (!user?.id) {
+      setError("Usuario no autenticado");
+      return;
+    }
 
-  if (formData.productos.length === 0) {
-    setError("Debe agregar al menos un producto");
-    return;
-  }
+    if (formData.productos.length === 0) {
+      setError("Debe agregar al menos un producto");
+      return;
+    }
 
-  // Validar campos requeridos
-  if (!formData.entrega.personalId) {
-    setError("Debe seleccionar un técnico");
-    return;
-  }
+    // Validar campos requeridos
+    if (!formData.entrega.personalId) {
+      setError("Debe seleccionar un técnico");
+      return;
+    }
 
-  if (!formData.entrega.proyecto.trim()) {
-    setError("Debe ingresar un proyecto");
-    return;
-  }
+    if (!formData.entrega.proyecto.trim()) {
+      setError("Debe ingresar un proyecto");
+      return;
+    }
 
-  if (!formData.entrega.fechaEstimadaDevolucion) {
-    setError("Debe ingresar la fecha estimada de devolución");
-    return;
-  }
+    if (!formData.entrega.fechaEstimadaDevolucion) {
+      setError("Debe ingresar la fecha estimada de devolución");
+      return;
+    }
 
-  setLoading(true);
-  setError("");
+    setLoading(true);
+    setError("");
 
-  try {
-    // Asegurar que el almacenista sea el usuario actual
-    const dataToSend = {
-      ...formData,
-      entrega: {
-        ...formData.entrega,
-        almacenista: user.id, // Forzar el ID del usuario actual
-      }
-    };
+    try {
+      const dataToSend = {
+        ...formData,
+        entrega: {
+          ...formData.entrega,
+          almacenista: user.id,
+        },
+      };
 
-    console.log("Datos a enviar:", dataToSend);
-    
-    await createEntrega(dataToSend);
-    setSuccess("Entrega creada correctamente");
+      // console.log("Datos a enviar:", dataToSend);
 
-    // Reiniciar formulario
-    setFormData({
-      entrega: {
-        fecha: new Date().toISOString().split("T")[0],
-        proyecto: "",
-        observaciones: "",
-        estado: "pendiente",
-        fechaEstimadaDevolucion: "",
-        almacenista: user.id, 
-        personalId: "",
-      },
-      productos: [],
-    });
-  } catch (error) {
-    console.error("Error completo:", error);
-    setError(error.response?.data?.message || error.message || "Error al procesar la solicitud");
-  } finally {
-    setLoading(false);
-  }
-};
+      await createEntrega(dataToSend);
+      setSuccess("Entrega creada correctamente");
+
+      // Reiniciar formulario
+      setFormData({
+        entrega: {
+          fecha: new Date().toISOString().split("T")[0],
+          proyecto: "",
+          observaciones: "",
+          estado: "pendiente",
+          fechaEstimadaDevolucion: "",
+          almacenista: user.id,
+          personalId: "",
+        },
+        productos: [],
+      });
+    } catch (error) {
+      console.error("Error completo:", error);
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Error al procesar la solicitud"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
   // Función para mostrar los detalles de las unidades seriadas
   const mostrarDetallesUnidades = (unidades) => {
     if (!unidades || unidades.length === 0) return "N/A";
@@ -492,7 +496,7 @@ const [formData, setFormData] = useState({
                   {Array.isArray(productos) &&
                     productos.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.descripcion} (Stock: {p.stock})
+                        {p.descripcion} - {p.modelo} (Stock: {p.stock})
                       </option>
                     ))}
                 </select>

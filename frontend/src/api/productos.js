@@ -1,6 +1,7 @@
 import axios from "./axios";
 
 export const getProductosRequest = async () => axios.get("/productos");
+export const getProductsRequest = async () => axios.get("/products");
 export const getProductoRequest = async (id) => axios.get(`/productos/${id}`);
 export const createProductoRequest = async (producto) =>
   axios.post("/productos", producto);

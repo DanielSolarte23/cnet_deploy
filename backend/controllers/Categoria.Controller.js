@@ -85,7 +85,7 @@ const CategoriaController = {
 
   // Actualizar una categoría
   async update(req, res) {
-    try {
+    try {                       
       const { id } = req.params;
       const [updated] = await Categoria.update(req.body, {
         where: { id },
@@ -290,7 +290,7 @@ const SubcategoriaController = {
 
       // Verificar si hay productos asociados
       const productosAsociados = await Producto.count({
-        where: { SubcategoriaId: id },
+        where: { SubcategoriumId: id },
       });
 
       if (productosAsociados > 0) {

@@ -76,6 +76,10 @@ const ActaController = {
         entrega.estado === "parcialmente_devuelta" ||
         entrega.estado === "completamente_devuelta"
       ) {
+        const htmlDevolucion =
+          await ActaController.generarHTMLDevolucionCompleta(datosActa);
+        htmlContent += '<div class="page-break"></div>' + htmlDevolucion;
+      } else {
         const htmlDevolucion = await ActaController.generarHTMLDevolucion(
           datosActa
         );
@@ -164,15 +168,19 @@ const ActaController = {
       let htmlContent = await ActaController.generarHTMLActa(datosActa);
 
       // Si la entrega está parcialmente o completamente devuelta, añadir acta de devolución
-      // if (
-      //   entrega.estado === "parcialmente_devuelta" ||
-      //   entrega.estado === "completamente_devuelta"
-      // ) {
-      const htmlDevolucion = await ActaController.generarHTMLDevolucion(
-        datosActa
-      );
-      htmlContent += '<div class="page-break"></div>' + htmlDevolucion;
-      // }
+      if (
+        entrega.estado === "parcialmente_devuelta" ||
+        entrega.estado === "completamente_devuelta"
+      ) {
+        const htmlDevolucion =
+          await ActaController.generarHTMLDevolucionCompleta(datosActa);
+        htmlContent += '<div class="page-break"></div>' + htmlDevolucion;
+      } else {
+        const htmlDevolucion = await ActaController.generarHTMLDevolucion(
+          datosActa
+        );
+        htmlContent += '<div class="page-break"></div>' + htmlDevolucion;
+      }
 
       // Enviar directamente el HTML para vista previa
       return res.send(htmlContent);
@@ -281,6 +289,28 @@ const ActaController = {
    * Genera el HTML del acta de devolución
    */
   async generarHTMLDevolucion(datos) {
+    // Leer la plantilla desde un archivo
+    const templatePath = path.join(
+      __dirname,
+      "../views/templates/acta-devolucion-en-0.hbs"
+    );
+    const source = fs.readFileSync(templatePath, "utf8");
+
+    // Compilar la plantilla
+    const template = handlebars.compile(source);
+
+    // Añadir la fecha actual para la devolución
+    datos.fechaDevolucion = new Date().toLocaleDateString("es-ES");
+
+    // Filtrar solo los productos que tienen devoluciones
+    datos.productosDevueltos = datos.productos.filter(
+      (p) => p.cantidadDevuelta > 0
+    );
+
+    // Generar el HTML con los datos
+    return template(datos);
+  },
+  async generarHTMLDevolucionCompleta(datos) {
     // Leer la plantilla desde un archivo
     const templatePath = path.join(
       __dirname,

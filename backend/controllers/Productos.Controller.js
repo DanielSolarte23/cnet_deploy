@@ -31,7 +31,7 @@ const verificarStockBajo = async (producto) => {
   }
 };
 
-// Función independiente (fuera del controlador)
+//Funcion para generar el codigo de productos automatico
 const generarCodigoProducto = async (
   prefijo = "PRD",
   digitos = 4,
@@ -87,8 +87,8 @@ const ProductoController = {
     try {
       const {
         unidades,
-        categoria, // Datos para crear una nueva categoría (opcional)
-        subcategoria, // Datos para crear una nueva subcategoría (opcional)
+        categoria, // Datos para crear una nueva categoría
+        subcategoria, // Datos para crear una nueva subcategoría
         SubcategoriumId, // ID de subcategoría existente
         StantId, // ID del estante donde se ubicará el producto
         ...productoData
@@ -191,7 +191,6 @@ const ProductoController = {
       });
     }
   },
-  // Y en el controlador usar:
 
   // Obtener todos los productos
   async findAll(req, res) {
@@ -211,6 +210,40 @@ const ProductoController = {
           },
           {
             model: ProductoUnidad,
+          },
+        ],
+      });
+
+      return res.status(200).json({
+        success: true,
+        count: productos.length,
+        data: productos,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Error al obtener los productos",
+        error: error.message,
+      });
+    }
+  },
+
+  async findAllLite(req, res) {
+    try {
+      const productos = await Producto.findAll({
+        attributes: [
+          "id",
+          "codigo",
+          "descripcion",
+          "marca",
+          "modelo",
+          "stock",
+          "StantId",
+        ],
+        include: [
+          {
+            model: Stant,
+            attributes: ["nombre"],
           },
         ],
       });
@@ -652,7 +685,7 @@ const ProductoController = {
         include: [
           { model: Subcategoria, include: [Categoria] },
           { model: Stant },
-          { model: ProductoUnidad },
+          // { model: ProductoUnidad },
         ],
       });
 

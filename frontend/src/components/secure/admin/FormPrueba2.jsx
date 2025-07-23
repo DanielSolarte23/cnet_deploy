@@ -626,9 +626,9 @@ export default function FormularioMultipaso({
                     onChange={handleChange}
                   >
                     <option value="unidad">Unidad</option>
-                    <option value="">Metro</option>
-                    <option value="kilogramo">Kilogramo</option>
-                    <option value="litro">Litro</option>
+                    <option value="metros">Metro</option>
+                    <option value="kilogramos">Kilogramo</option>
+                    <option value="litros">Litro</option>
                   </select>
                 </div>
 

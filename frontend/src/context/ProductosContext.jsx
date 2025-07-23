@@ -10,6 +10,7 @@ import {
   getProductoByStantreRequest,
   updateStockRequest,
   getStockBajoRequest,
+  getProductsRequest
 } from "../api/productos";
 
 const ProductosContext = createContext();
@@ -50,6 +51,20 @@ export function ProductosProvider({ children }) {
       setLoading(false);
     }
   };
+  
+  // const getProducts = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const res = await getProductsRequest();
+  //     setProductos(res.data.data);
+  //     console.log("Datos recibidos:", res.data.data);
+  //   } catch (error) {
+  //     handleError(error, "Error al cargar productos");
+  //     console.log(error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const getProducto = async (id) => {
     setLoading(true);
@@ -197,6 +212,7 @@ export function ProductosProvider({ children }) {
         getCantidadProductosStant,
         updateStock,
         getStockBajo,
+        // getProducts,
       }}
     >
       {children}

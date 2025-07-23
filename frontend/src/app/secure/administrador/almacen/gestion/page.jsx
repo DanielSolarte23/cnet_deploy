@@ -308,14 +308,14 @@ export default function GestionPage() {
                       : "-"}
                   </td>
 
-                  <td className="px-4 py-1 md:px-6 md:py-1 text-center">
+                  <td className="px-4 py-1 md:px-6 md:py-1 text-center whitespace-nowrap">
                     {entrega.proyecto
                       ? entrega.proyecto.split(" ").slice(0, 2).join(" ") +
                         (entrega.proyecto.split(" ").length > 3 ? "..." : "")
                       : "-"}
                   </td>
 
-                  <td className="px-4 py-1 md:px-6 md:py-4 text-center">
+                  <td className="px-4 py-1 md:px-6 md:py-4 text-center whitespace-nowrap">
                     {entrega.tecnicoData?.nombre || ""}
                   </td>
                   <td className="px-4 py-1 md:px-6 md:py-4 text-center">

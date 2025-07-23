@@ -6,6 +6,7 @@ const router = express.Router();
 // Rutas para productos
 router.post("/productos", validateProductoCreate, ProductoController.create); // Crear un nuevo producto
 router.get("/productos", ProductoController.findAll); // Obtener todos los productos
+router.get("/products", ProductoController.findAllLite); // Obtener todos los productos
 router.get("/productos/:id", ProductoController.findOne); // Obtener un producto por ID
 router.put("/productos/:id", ProductoController.update); // Actualizar un producto por ID
 router.put("/productos/:id/stock", ProductoController.ajustarStock); // Actualizar stock de un producto por ID

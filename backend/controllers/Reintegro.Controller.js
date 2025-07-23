@@ -4,12 +4,12 @@ const ReintegroProducto = db.ReintegroProducto;
 const Entrega = db.Entrega;
 const EntregaProducto = db.EntregaProducto;
 const Producto = db.Producto;
+const ProductoUnidad = db.ProductoUnidad;
 const Usuario = db.Usuario;
 const Personal = db.Personal;
 const { Op } = require("sequelize");
 
 const ReintegroController = {
-  // Crear un nuevo reintegro con sus productos
   async create(req, res) {
     const t = await db.sequelize.transaction();
 
@@ -68,23 +68,24 @@ const ReintegroController = {
           const cantidadPendiente =
             entregaProducto.cantidad - entregaProducto.devuelto;
 
-          if (prod.cantidad > cantidadPendiente) {
-            throw new Error(
-              `No se puede devolver más cantidad de la que se entregó para ${producto.descripcion}`
-            );
-          }
-
           // Verificar si el producto tiene unidades con seriales
           if (
-            prod.unidadesSeriadas &&
-            Array.isArray(prod.unidadesSeriadas) &&
-            prod.unidadesSeriadas.length > 0
+            prod.ProductoUnidads &&
+            Array.isArray(prod.ProductoUnidads) &&
+            prod.ProductoUnidads.length > 0
           ) {
             // Para productos con seriales, verificamos cada unidad específica
-            const cantidad = prod.unidadesSeriadas.length;
+            const cantidad = prod.ProductoUnidads.length;
+
+            // Verificar que no se devuelva más de lo pendiente
+            if (cantidad > cantidadPendiente) {
+              throw new Error(
+                `No se puede devolver más cantidad de la que se entregó para ${producto.descripcion}`
+              );
+            }
 
             // Verificar que todas las unidades existan y pertenezcan al producto original
-            for (const unidadId of prod.unidadesSeriadas) {
+            for (const unidadId of prod.ProductoUnidads) {
               const unidad = await db.ProductoUnidad.findOne({
                 where: {
                   id: unidadId,
@@ -99,9 +100,11 @@ const ReintegroController = {
                 );
               }
 
-              // Verificar que la unidad esté en las unidades entregadas originalmente
+              // CORRECCIÓN: Verificar que la unidad esté en las unidades entregadas originalmente
+              // El campo en EntregaProducto se llama 'unidadesSeriadas', no 'ProductoUnidads'
               if (
                 entregaProducto.unidadesSeriadas &&
+                Array.isArray(entregaProducto.unidadesSeriadas) &&
                 !entregaProducto.unidadesSeriadas.includes(unidadId)
               ) {
                 throw new Error(
@@ -109,9 +112,11 @@ const ReintegroController = {
                 );
               }
 
-              // Aquí podrías actualizar el estado de la unidad si es necesario
-              // Por ejemplo: unidad.estado = 'devuelto';
-              // await unidad.save({ transaction: t });
+              // Actualizar el estado de la unidad si existe la tabla ProductoUnidad
+              if (unidad) {
+                unidad.estado = "devuelto";
+                await unidad.save({ transaction: t });
+              }
             }
 
             // Actualizar el campo devuelto en EntregaProducto
@@ -123,7 +128,7 @@ const ReintegroController = {
                 ReintegroId: nuevoReintegro.id,
                 ProductoId: prod.ProductoId,
                 cantidad: cantidad,
-                unidadesSeriadas: prod.unidadesSeriadas,
+                ProductoUnidads: prod.ProductoUnidads,
                 ...infoProducto,
               },
               { transaction: t }
@@ -133,6 +138,13 @@ const ReintegroController = {
             producto.stock += cantidad;
             await producto.save({ transaction: t });
           } else {
+            // Para productos sin seriales
+            if (prod.cantidad > cantidadPendiente) {
+              throw new Error(
+                `No se puede devolver más cantidad de la que se entregó para ${producto.descripcion}`
+              );
+            }
+
             // Actualizar el campo devuelto en EntregaProducto
             entregaProducto.devuelto += prod.cantidad;
 
@@ -163,11 +175,32 @@ const ReintegroController = {
         } else {
           // Si no viene de una entrega específica (reintegro directo)
           if (
-            prod.unidadesSeriadas &&
-            Array.isArray(prod.unidadesSeriadas) &&
-            prod.unidadesSeriadas.length > 0
+            prod.ProductoUnidads &&
+            Array.isArray(prod.ProductoUnidads) &&
+            prod.ProductoUnidads.length > 0
           ) {
-            const cantidad = prod.unidadesSeriadas.length;
+            const cantidad = prod.ProductoUnidads.length;
+
+            // Verificar que todas las unidades existan
+            for (const unidadId of prod.ProductoUnidads) {
+              const unidad = await db.ProductoUnidad.findOne({
+                where: {
+                  id: unidadId,
+                  productoId: prod.ProductoId,
+                },
+                transaction: t,
+              });
+
+              if (!unidad) {
+                throw new Error(
+                  `La unidad con ID ${unidadId} no existe o no pertenece al producto ${producto.descripcion}`
+                );
+              }
+
+              // Actualizar el estado de la unidad
+              unidad.estado = "devuelto";
+              await unidad.save({ transaction: t });
+            }
 
             // Crear el registro en ReintegroProducto con las unidades seriadas
             await ReintegroProducto.create(
@@ -175,7 +208,7 @@ const ReintegroController = {
                 ReintegroId: nuevoReintegro.id,
                 ProductoId: prod.ProductoId,
                 cantidad: cantidad,
-                unidadesSeriadas: prod.unidadesSeriadas,
+                ProductoUnidads: prod.ProductoUnidads,
                 ...infoProducto,
               },
               { transaction: t }
@@ -185,6 +218,7 @@ const ReintegroController = {
             producto.stock += cantidad;
             await producto.save({ transaction: t });
           } else {
+            // Para productos sin seriales en reintegro directo
             // Crear el registro en ReintegroProducto
             await ReintegroProducto.create(
               {
@@ -216,11 +250,21 @@ const ReintegroController = {
         include: [
           {
             model: ReintegroProducto,
-            include: [{ model: Producto }],
-            // Asegurar que se incluyan todos los campos, incluyendo unidadesSeriadas
-            attributes: { 
-              include: ['unidadesSeriadas'] // Explícitamente incluir el campo
-            }
+            include: [
+              {
+                model: Producto,
+                include: [
+                  {
+                    model: db.ProductoUnidad,
+                    required: false, // LEFT JOIN para que aparezcan productos sin unidades seriadas
+                  },
+                ],
+              },
+            ],
+            // Incluir todos los campos de ReintegroProducto, incluyendo ProductoUnidads
+            attributes: {
+              include: ["ProductoUnidads"],
+            },
           },
           {
             model: Usuario,
@@ -238,6 +282,28 @@ const ReintegroController = {
           },
         ],
       });
+
+      // Enriquecer los datos con las unidades específicas devueltas
+      if (reintegroCompleto && reintegroCompleto.ReintegroProductos) {
+        for (const reintegroProducto of reintegroCompleto.ReintegroProductos) {
+          if (
+            reintegroProducto.ProductoUnidads &&
+            reintegroProducto.ProductoUnidads.length > 0
+          ) {
+            // Obtener los detalles de las unidades específicas devueltas
+            const unidadesDevueltas = await db.ProductoUnidad.findAll({
+              where: {
+                id: reintegroProducto.ProductoUnidads,
+                productoId: reintegroProducto.ProductoId,
+              },
+              attributes: ["id", "serial", "estado", "observaciones"],
+            });
+
+            // Agregar las unidades como una propiedad adicional
+            reintegroProducto.dataValues.UnidadesDevueltas = unidadesDevueltas;
+          }
+        }
+      }
 
       return res.status(201).json({
         success: true,
@@ -261,11 +327,18 @@ const ReintegroController = {
         include: [
           {
             model: ReintegroProducto,
-            include: [{ model: Producto }],
-            // Asegurar que se incluyan todos los campos, incluyendo unidadesSeriadas
-            attributes: { 
-              include: ['unidadesSeriadas'] // Explícitamente incluir el campo
-            }
+            include: [
+              {
+                model: Producto,
+                include: [
+                  {
+                    model: db.ProductoUnidad,
+                    attributes: ["id", "serial"],
+                    required: false, // LEFT JOIN para que aparezcan productos sin unidades seriadas
+                  },
+                ],
+              },
+            ],
           },
           {
             model: Usuario,
@@ -308,10 +381,10 @@ const ReintegroController = {
           {
             model: ReintegroProducto,
             include: [{ model: Producto }],
-            // Asegurar que se incluyan todos los campos, incluyendo unidadesSeriadas
-            attributes: { 
-              include: ['unidadesSeriadas'] // Explícitamente incluir el campo
-            }
+            // Asegurar que se incluyan todos los campos, incluyendo ProductoUnidads
+            attributes: {
+              include: ["ProductoUnidads"], // Explícitamente incluir el campo
+            },
           },
           {
             model: Usuario,
@@ -353,7 +426,8 @@ const ReintegroController = {
   // Obtener reintegros por filtros (fecha, entrega, técnico)
   async findByFilters(req, res) {
     try {
-      const { fechaInicio, fechaFin, entregaId, personalId, estado } = req.query;
+      const { fechaInicio, fechaFin, entregaId, personalId, estado } =
+        req.query;
 
       const filtros = {};
 
@@ -389,10 +463,10 @@ const ReintegroController = {
           {
             model: ReintegroProducto,
             include: [{ model: Producto }],
-            // Asegurar que se incluyan todos los campos, incluyendo unidadesSeriadas
-            attributes: { 
-              include: ['unidadesSeriadas'] // Explícitamente incluir el campo
-            }
+            // Asegurar que se incluyan todos los campos, incluyendo ProductoUnidads
+            attributes: {
+              include: ["ProductoUnidads"], // Explícitamente incluir el campo
+            },
           },
           {
             model: Usuario,
@@ -440,10 +514,10 @@ const ReintegroController = {
             {
               model: ReintegroProducto,
               include: [{ model: Producto }],
-              // Asegurar que se incluyan todos los campos, incluyendo unidadesSeriadas
-              attributes: { 
-                include: ['unidadesSeriadas'] // Explícitamente incluir el campo
-              }
+              // Asegurar que se incluyan todos los campos, incluyendo ProductoUnidads
+              attributes: {
+                include: ["ProductoUnidads"], // Explícitamente incluir el campo
+              },
             },
             {
               model: Usuario,
@@ -632,19 +706,19 @@ const ReintegroController = {
             [Op.lt]: fechaLimite,
           },
           estado: {
-            [Op.notIn]: ['completamente_devuelta', 'dada_de_baja']
-          }
+            [Op.notIn]: ["completamente_devuelta", "dada_de_baja"],
+          },
         },
         include: [
           {
             model: EntregaProducto,
             where: {
               [Op.or]: [
-                { devuelto: { [Op.lt]: db.Sequelize.col('cantidad') } },
-                { devuelto: { [Op.is]: null } }
-              ]
-            }
-          }
+                { devuelto: { [Op.lt]: db.Sequelize.col("cantidad") } },
+                { devuelto: { [Op.is]: null } },
+              ],
+            },
+          },
         ],
         transaction: t,
       });
@@ -656,7 +730,8 @@ const ReintegroController = {
         let entregaModificada = false;
 
         for (const entregaProducto of entrega.EntregaProductos) {
-          const cantidadPendiente = entregaProducto.cantidad - (entregaProducto.devuelto || 0);
+          const cantidadPendiente =
+            entregaProducto.cantidad - (entregaProducto.devuelto || 0);
 
           if (cantidadPendiente > 0) {
             // Marcar como dado de baja
@@ -680,7 +755,9 @@ const ReintegroController = {
                   productoId: entregaProducto.ProductoId,
                   cantidad: cantidadPendiente,
                   fechaEntrega: entrega.fecha,
-                  diasVencidos: Math.ceil((new Date() - entrega.fecha) / (1000 * 60 * 60 * 24)),
+                  diasVencidos: Math.ceil(
+                    (new Date() - entrega.fecha) / (1000 * 60 * 60 * 24)
+                  ),
                 },
                 nivel: "informativo",
                 entregaId: entrega.id,
@@ -695,7 +772,7 @@ const ReintegroController = {
           entrega.estado = "dada_de_baja";
           entrega.fechaBaja = new Date();
           entrega.motivoBaja = `Vencimiento automático - ${diasVencimiento} días`;
-          
+
           await entrega.save({ transaction: t });
           entregasProcesadas++;
         }
@@ -710,7 +787,7 @@ const ReintegroController = {
           entregasProcesadas,
           productosAfectados,
           fechaLimite,
-          diasVencimiento
+          diasVencimiento,
         },
       });
     } catch (error) {
@@ -727,9 +804,11 @@ const ReintegroController = {
   async obtenerEntregasProximasVencer(req, res) {
     try {
       const { diasAlerta = 7, diasVencimiento = 30 } = req.query;
-      
+
       const fechaAlerta = new Date();
-      fechaAlerta.setDate(fechaAlerta.getDate() - (diasVencimiento - diasAlerta));
+      fechaAlerta.setDate(
+        fechaAlerta.getDate() - (diasVencimiento - diasAlerta)
+      );
 
       const fechaVencimiento = new Date();
       fechaVencimiento.setDate(fechaVencimiento.getDate() - diasVencimiento);
@@ -740,17 +819,17 @@ const ReintegroController = {
             [Op.between]: [fechaVencimiento, fechaAlerta],
           },
           estado: {
-            [Op.notIn]: ['completamente_devuelta', 'dada_de_baja']
-          }
+            [Op.notIn]: ["completamente_devuelta", "dada_de_baja"],
+          },
         },
         include: [
           {
             model: EntregaProducto,
             where: {
               [Op.or]: [
-                { devuelto: { [Op.lt]: db.Sequelize.col('cantidad') } },
-                { devuelto: { [Op.is]: null } }
-              ]
+                { devuelto: { [Op.lt]: db.Sequelize.col("cantidad") } },
+                { devuelto: { [Op.is]: null } },
+              ],
             },
             include: [{ model: Producto }],
           },
@@ -769,15 +848,22 @@ const ReintegroController = {
       });
 
       // Calcular días restantes para cada entrega
-      const entregasConDias = entregasProximasVencer.map(entrega => {
-        const diasTranscurridos = Math.ceil((new Date() - entrega.fecha) / (1000 * 60 * 60 * 24));
+      const entregasConDias = entregasProximasVencer.map((entrega) => {
+        const diasTranscurridos = Math.ceil(
+          (new Date() - entrega.fecha) / (1000 * 60 * 60 * 24)
+        );
         const diasRestantes = diasVencimiento - diasTranscurridos;
-        
+
         return {
           ...entrega.toJSON(),
           diasTranscurridos,
           diasRestantes: Math.max(0, diasRestantes),
-          estadoVencimiento: diasRestantes <= 0 ? 'vencida' : diasRestantes <= diasAlerta ? 'proxima_vencer' : 'normal'
+          estadoVencimiento:
+            diasRestantes <= 0
+              ? "vencida"
+              : diasRestantes <= diasAlerta
+              ? "proxima_vencer"
+              : "normal",
         };
       });
 
@@ -787,8 +873,8 @@ const ReintegroController = {
         data: entregasConDias,
         configuracion: {
           diasAlerta,
-          diasVencimiento
-        }
+          diasVencimiento,
+        },
       });
     } catch (error) {
       return res.status(500).json({
@@ -803,7 +889,7 @@ const ReintegroController = {
   async obtenerEstadisticas(req, res) {
     try {
       const { fechaInicio, fechaFin } = req.query;
-      
+
       const filtroFecha = {};
       if (fechaInicio && fechaFin) {
         filtroFecha.fecha = {
@@ -813,75 +899,83 @@ const ReintegroController = {
 
       // Estadísticas generales
       const totalReintegros = await Reintegro.count({
-        where: filtroFecha
+        where: filtroFecha,
       });
 
       const reintegrosPorEstado = await Reintegro.findAll({
         where: filtroFecha,
         attributes: [
-          'estado',
-          [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'cantidad']
+          "estado",
+          [db.sequelize.fn("COUNT", db.sequelize.col("id")), "cantidad"],
         ],
-        group: ['estado']
+        group: ["estado"],
       });
 
       // Productos más devueltos
       const productosMasDevueltos = await ReintegroProducto.findAll({
         attributes: [
-          'ProductoId',
-          'descripcion',
-          [db.sequelize.fn('SUM', db.sequelize.col('cantidad')), 'totalDevuelto']
+          "ProductoId",
+          "descripcion",
+          [
+            db.sequelize.fn("SUM", db.sequelize.col("cantidad")),
+            "totalDevuelto",
+          ],
         ],
         include: [
           {
             model: Reintegro,
             where: filtroFecha,
-            attributes: []
-          }
+            attributes: [],
+          },
         ],
-        group: ['ProductoId', 'descripcion'],
-        order: [[db.sequelize.fn('SUM', db.sequelize.col('cantidad')), 'DESC']],
-        limit: 10
+        group: ["ProductoId", "descripcion"],
+        order: [[db.sequelize.fn("SUM", db.sequelize.col("cantidad")), "DESC"]],
+        limit: 10,
       });
 
       // Técnicos con más reintegros
       const tecnicosConMasReintegros = await Reintegro.findAll({
         where: filtroFecha,
         attributes: [
-          'personalId',
-          [db.sequelize.fn('COUNT', db.sequelize.col('Reintegro.id')), 'totalReintegros']
+          "personalId",
+          [
+            db.sequelize.fn("COUNT", db.sequelize.col("Reintegro.id")),
+            "totalReintegros",
+          ],
         ],
         include: [
           {
             model: Personal,
             as: "tecnicoData",
             attributes: ["nombre", "cedula", "cargo"],
-          }
+          },
         ],
-        group: ['personalId', 'tecnicoData.id'],
-        order: [[db.sequelize.fn('COUNT', db.sequelize.col('Reintegro.id')), 'DESC']],
-        limit: 10
+        group: ["personalId", "tecnicoData.id"],
+        order: [
+          [db.sequelize.fn("COUNT", db.sequelize.col("Reintegro.id")), "DESC"],
+        ],
+        limit: 10,
       });
 
       return res.status(200).json({
         success: true,
         data: {
           totalReintegros,
-          reintegrosPorEstado: reintegrosPorEstado.map(r => ({
+          reintegrosPorEstado: reintegrosPorEstado.map((r) => ({
             estado: r.estado,
-            cantidad: parseInt(r.dataValues.cantidad)
+            cantidad: parseInt(r.dataValues.cantidad),
           })),
-          productosMasDevueltos: productosMasDevueltos.map(p => ({
+          productosMasDevueltos: productosMasDevueltos.map((p) => ({
             productoId: p.ProductoId,
             descripcion: p.descripcion,
-            totalDevuelto: parseInt(p.dataValues.totalDevuelto)
+            totalDevuelto: parseInt(p.dataValues.totalDevuelto),
           })),
-          tecnicosConMasReintegros: tecnicosConMasReintegros.map(t => ({
+          tecnicosConMasReintegros: tecnicosConMasReintegros.map((t) => ({
             personalId: t.personalId,
             tecnico: t.tecnicoData,
-            totalReintegros: parseInt(t.dataValues.totalReintegros)
-          }))
-        }
+            totalReintegros: parseInt(t.dataValues.totalReintegros),
+          })),
+        },
       });
     } catch (error) {
       return res.status(500).json({
@@ -890,7 +984,7 @@ const ReintegroController = {
         error: error.message,
       });
     }
-  }
+  },
 };
 
 module.exports = ReintegroController;
