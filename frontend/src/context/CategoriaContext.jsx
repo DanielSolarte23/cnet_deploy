@@ -37,7 +37,7 @@ export function CategoriaProvider({ children }) {
 
   const handleError = (error, defaultMessage) => {
     setErrors(error.response?.data?.message || defaultMessage);
-    console.log(error);
+    // // console.log(error);
   };
 
   const getCategorias = async () => {
@@ -45,10 +45,10 @@ export function CategoriaProvider({ children }) {
     try {
       const res = await getCategoriasRequest();
       setCategorias(res.data.data);
-      console.log("Datos recibidos:", res.data.data);
+      // console.log("Datos recibidos:", res.data.data);
     } catch (error) {
       handleError(error, "Error al cargar categorias");
-      console.log(error);
+      // console.log(error);
     } finally {
       setLoading(false);
     }
@@ -58,11 +58,11 @@ export function CategoriaProvider({ children }) {
     setLoading(true);
     try {
       const res = await getCategoriasRequest();
-      console.log("Datos recibidos:", res.data.data);
+      // console.log("Datos recibidos:", res.data.data);
       return res.data.data;
     } catch (error) {
       handleError(error, "Error al cargar categorias");
-      console.log(error);
+      // console.log(error);
     } finally {
       setLoading(false);
     }
@@ -75,7 +75,7 @@ export function CategoriaProvider({ children }) {
       return res.data;
     } catch (error) {
       handleError(error, "Error al cargar categoria");
-      console.log(error);
+      // console.log(error);
     } finally {
       setLoading(false);
     }
@@ -87,7 +87,7 @@ export function CategoriaProvider({ children }) {
       setCategorias((prev) => [...prev, res.data]);
       return res.data;
     } catch (error) {
-      console.log(error);
+      // console.log(error);
     }
   };
 
@@ -99,7 +99,7 @@ export function CategoriaProvider({ children }) {
       );
       return res.data;
     } catch (error) {
-      console.log(error);
+      // console.log(error);
     }
   };
 
@@ -108,7 +108,7 @@ export function CategoriaProvider({ children }) {
       await deleteCategoriaRequest(id);
       setCategorias((prev) => prev.filter((cat) => cat.id !== id));
     } catch (error) {
-      console.log(error);
+      // console.log(error);
     }
   };
 
@@ -120,7 +120,7 @@ export function CategoriaProvider({ children }) {
       // return res.data.data;
     } catch (error) {
       handleError(error, "Error al cargar subcategorias");
-      console.log(error);
+      // console.log(error);
     } finally {
       setLoading(false);
     }
@@ -133,7 +133,7 @@ export function CategoriaProvider({ children }) {
       return res.data;
     } catch (error) {
       handleError(error, "Error al cargar subcategoria");
-      console.log(error);
+      // console.log(error);
     } finally {
       setLoading(false);
     }
@@ -144,7 +144,7 @@ export function CategoriaProvider({ children }) {
       const res = await createSubcategoriaRequest(subcategoria);
       return res.data;
     } catch (error) {
-      console.log(error);
+      // console.log(error);
     }
   };
 
@@ -153,7 +153,7 @@ export function CategoriaProvider({ children }) {
       const res = await updateSubcategoriaRequest(id, subcategoria);
       return res.data;
     } catch (error) {
-      console.log(error);
+      // console.log(error);
     }
   };
 
@@ -161,7 +161,7 @@ export function CategoriaProvider({ children }) {
     try {
       await deleteSubcategoriaRequest(id);
     } catch (error) {
-      console.log(error);
+      // console.log(error);
     }
   };
 
@@ -172,7 +172,7 @@ export function CategoriaProvider({ children }) {
       return res.data;
     } catch (error) {
       handleError(error, "Error al cargar subcategorias por categoria");
-      console.log(error);
+      // console.log(error);
       return { data: { data: [] } };
     } finally {
       setLoading(false);

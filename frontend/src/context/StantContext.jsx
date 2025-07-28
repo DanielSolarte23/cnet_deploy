@@ -28,7 +28,7 @@ export function StantsProvider({ children }) {
 
   const handleError = (error, defaultMessage) => {
     setErrors(error.response?.data?.message || defaultMessage);
-    console.log(error);
+    // console.log(error);
   };
 
   const getStants = async () => {
@@ -36,10 +36,10 @@ export function StantsProvider({ children }) {
     try {
       const res = await getStantsRequest();
       setStants(res.data.data);
-      console.log("Datos recibidos:", res.data.data);
+      // console.log("Datos recibidos:", res.data.data);
     } catch (error) {
       handleError(error, "Error al cargar stants");
-      console.log(error);
+      // console.log(error);
     } finally {
       setLoading(false);
     }
@@ -52,7 +52,7 @@ export function StantsProvider({ children }) {
       return res.data;
     } catch (error) {
       handleError(error, "Error al cargar stant");
-      console.log(error);
+      // console.log(error);
     } finally {
       setLoading(false);
     }
@@ -66,7 +66,7 @@ export function StantsProvider({ children }) {
       return res.data.data;
     } catch (error) {
       handleError(error, "Error al crear stant");
-      console.log(error);
+      // console.log(error);
     } finally {
       setLoading(false);
     }
@@ -80,7 +80,7 @@ export function StantsProvider({ children }) {
       return res.data;
     } catch (error) {
       handleError(error, "Error al actualizar stant");
-      console.log(error);
+      // console.log(error);
     } finally {
       setLoading(false);
     }
@@ -93,7 +93,7 @@ export function StantsProvider({ children }) {
       setStants(stants.filter((s) => s.id !== id));
     } catch (error) {
       handleError(error, "Error al eliminar stant");
-      console.log(error);
+      // console.log(error);
     } finally {
       setLoading(false);
     }

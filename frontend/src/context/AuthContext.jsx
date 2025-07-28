@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useState, useContext, useEffect } from "react";
-import { registerRequest, loginRequest, verifyTokenRequest } from "../api/auth";
+import { registerRequest, loginRequest, verifyTokenRequest, logoutRequest } from "../api/auth";
 import Cookies from "js-cookie";
 
 export const AuthContext = createContext();
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
   const signin = async (user) => {
     try {
       const res = await loginRequest(user);
-      console.log("Respuesta completa del login:", res);
+      // console.log("Respuesta completa del login:", res);
 
       // Verificar que tenemos todos los datos necesarios
       if (!res.data || !res.data.usuario) {
@@ -46,8 +46,8 @@ export const AuthProvider = ({ children }) => {
 
       // Guardar token con configuración más robusta
       if (res.data.token) {
-        // Configuración de cookies más específica para Next.js
-        Cookies.set("token", res.data.token, {
+        // Usar 'jwt' para mantener consistencia con el backend
+        Cookies.set("jwt", res.data.token, {
           expires: 7,
           path: "/",
           secure: process.env.NODE_ENV === "production",
@@ -65,11 +65,11 @@ export const AuthProvider = ({ children }) => {
         token: res.data.token || "from_cookie",
       };
 
-      console.log("Datos del usuario a guardar:", userData);
+      // console.log("Datos del usuario a guardar:", userData);
 
       // Verificar que tenemos un ID válido
       if (!userData.id) {
-        console.error("No se pudo obtener el ID del usuario:", res.data);
+        // console.error("No se pudo obtener el ID del usuario:", res.data);
         throw new Error("Datos de usuario incompletos");
       }
 
@@ -83,10 +83,9 @@ export const AuthProvider = ({ children }) => {
 
       return userData;
     } catch (error) {
-      console.error("Error en signin:", error);
+      // console.error("Error en signin:", error);
 
       // Limpiar cookies y localStorage
-      Cookies.remove("token", { path: "/" });
       Cookies.remove("jwt", { path: "/" });
       if (typeof window !== "undefined") {
         localStorage.removeItem("authUser");
@@ -108,35 +107,63 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      // Limpiar cookies con diferentes configuraciones para asegurar eliminación completa
-      Cookies.remove("token", { path: "/" });
-      Cookies.remove("jwt", { path: "/" });
+      // console.log("Iniciando proceso de logout...");
       
-      // Intentar eliminar con diferentes configuraciones de dominio
-      Cookies.remove("token", { path: "/", domain: window.location.hostname });
-      Cookies.remove("jwt", { path: "/", domain: window.location.hostname });
-      
-      // Limpiar localStorage
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("authUser");
-        localStorage.clear(); // Limpiar todo el localStorage si es necesario
+      // 1. Llamar al endpoint del backend para limpiar la cookie httpOnly
+      try {
+        await logoutRequest();
+        // console.log("Logout en backend exitoso");
+      } catch (error) {
+        // console.warn("Error al hacer logout en backend:", error);
+        // Continuar con la limpieza local aunque falle el backend
       }
       
-      // Actualizar estado
+      // 2. Limpiar cookies del lado del cliente
+      // Usar 'jwt' para mantener consistencia
+      Cookies.remove("jwt", { path: "/" });
+      Cookies.remove("token", { path: "/" }); // Por si acaso había alguna con este nombre
+      
+      // Intentar eliminar con diferentes configuraciones de dominio
+      if (typeof window !== "undefined") {
+        Cookies.remove("jwt", { path: "/", domain: window.location.hostname });
+        Cookies.remove("jwt", { path: "/", domain: `.${window.location.hostname}` });
+        Cookies.remove("token", { path: "/", domain: window.location.hostname });
+      }
+      
+      // 3. Limpiar localStorage
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("authUser");
+        // No hagas localStorage.clear() aquí, podría afectar otras apps
+      }
+      
+      // 4. Actualizar estado inmediatamente
       setIsAuthenticated(false);
       setUser(null);
       setLoading(false);
       
-      // Opcional: Hacer una llamada al backend para invalidar el token
-      // await logoutRequest(); // Si tienes esta función en tu API
+      // console.log("Logout completado exitosamente");
       
-      console.log("Logout completado exitosamente");
+      // 5. Opcional: Forzar recarga de la página para limpiar cualquier estado residual
+      if (typeof window !== "undefined") {
+        // Esperar un poco antes de recargar para que se actualice el estado
+        setTimeout(() => {
+          window.location.href = "/"; // O la ruta que uses para login
+        }, 100);
+      }
+      
     } catch (error) {
-      console.error("Error durante el logout:", error);
+      // console.error("Error durante el logout:", error);
       // Asegurar que el estado se limpie incluso si hay error
       setIsAuthenticated(false);
       setUser(null);
       setLoading(false);
+      
+      // En caso de error, también redirigir
+      if (typeof window !== "undefined") {
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 100);
+      }
     }
   };
 
@@ -150,7 +177,7 @@ export const AuthProvider = ({ children }) => {
         return JSON.parse(storedUser);
       }
     } catch (error) {
-      console.error("Error parsing stored user:", error);
+      // console.error("Error parsing stored user:", error);
       localStorage.removeItem("authUser");
     }
     return null;
@@ -171,16 +198,16 @@ export const AuthProvider = ({ children }) => {
       if (!isClient) return;
 
       try {
-        // Verificar token en cookies
-        const token = Cookies.get("token") || Cookies.get("jwt");
+        // Usar 'jwt' para mantener consistencia con el backend
+        const token = Cookies.get("jwt") || Cookies.get("token");
         
         if (!token) {
-          console.log("No hay token disponible");
+          // console.log("No hay token disponible");
           
           // Verificar si hay datos en localStorage como fallback
           const storedUser = checkAuthFromStorage();
           if (storedUser && storedUser.token && storedUser.token !== "from_cookie") {
-            console.log("Intentando restaurar desde localStorage");
+            // console.log("Intentando restaurar desde localStorage");
             try {
               const res = await verifyTokenRequest(storedUser.token);
               if (res.data) {
@@ -190,7 +217,7 @@ export const AuthProvider = ({ children }) => {
                 return;
               }
             } catch (error) {
-              console.log("Token en localStorage inválido, limpiando");
+              // console.log("Token en localStorage inválido, limpiando");
               localStorage.removeItem("authUser");
             }
           }
@@ -201,14 +228,14 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
-        console.log("Verificando token:", token);
+        // console.log("Verificando token:", token);
         const res = await verifyTokenRequest(token);
-        console.log("Verificación de token exitosa:", res);
+        // console.log("Verificación de token exitosa:", res);
 
         if (!res.data) {
-          console.log("Respuesta sin datos, limpiando cookies");
-          Cookies.remove("token", { path: "/" });
+          // console.log("Respuesta sin datos, limpiando cookies");
           Cookies.remove("jwt", { path: "/" });
+          Cookies.remove("token", { path: "/" });
           localStorage.removeItem("authUser");
           setIsAuthenticated(false);
           setLoading(false);
@@ -228,7 +255,7 @@ export const AuthProvider = ({ children }) => {
           ...res.data,
         };
 
-        console.log("Usuario verificado:", userData);
+        // console.log("Usuario verificado:", userData);
 
         // Sincronizar localStorage con los datos verificados
         localStorage.setItem("authUser", JSON.stringify(userData));
@@ -237,18 +264,18 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
         setLoading(false);
       } catch (error) {
-        console.error("Error verificando token:", error);
+        // console.error("Error verificando token:", error);
         
         // Solo mostrar error si no es 401 (token expirado es normal)
         if (error.response?.status !== 401) {
           console.error("Error inesperado:", error.response?.data);
         } else {
-          console.log("Token expirado o inválido, limpiando sesión");
+          // console.log("Token expirado o inválido, limpiando sesión");
         }
         
         // Limpiar cookies, localStorage y estado
-        Cookies.remove("token", { path: "/" });
         Cookies.remove("jwt", { path: "/" });
+        Cookies.remove("token", { path: "/" });
         localStorage.removeItem("authUser");
         setIsAuthenticated(false);
         setUser(null);

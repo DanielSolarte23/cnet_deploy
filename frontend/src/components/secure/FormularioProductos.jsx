@@ -440,10 +440,10 @@ export default function ProductForm() {
       }
 
       // Log para debug
-      console.log(
-        "Datos que se envían al servidor:",
-        JSON.stringify(requestData, null, 2)
-      );
+      // console.log(
+      //   "Datos que se envían al servidor:",
+      //   JSON.stringify(requestData, null, 2)
+      // );
 
       // Crear el producto usando el contexto
       await createProducto(requestData);

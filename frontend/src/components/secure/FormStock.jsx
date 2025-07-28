@@ -136,7 +136,7 @@ export default function FormStock({
 
       // Mostrar mensaje de éxito y resetear formulario
       showNotification("Stock ajustado correctamente");
-      console.log("Stock ajustado correctamente", dataToSend);
+      // console.log("Stock ajustado correctamente", dataToSend);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
       setCantidad(0);

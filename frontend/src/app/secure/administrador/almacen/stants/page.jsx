@@ -53,7 +53,7 @@ function Page() {
 
   const abrirModal = (stant) => {
     setOpenModal(true);
-    console.log("Abrir modal para:", stant);
+    // console.log("Abrir modal para:", stant);
   };
 
   const handleCloseModal = () => {

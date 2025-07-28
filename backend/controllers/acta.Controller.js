@@ -130,7 +130,7 @@ const ActaController = {
           {
             model: Personal,
             as: "tecnicoData",
-            attributes: ["id", "nombre", "cedula", "cargo"],
+            attributes: ["id", "nombre", "cedula", "cargo", "firma_path"],
           },
         ],
       });
@@ -143,6 +143,8 @@ const ActaController = {
       }
 
       // Formatear datos para la plantilla
+      // En tu ActaController, modifica la parte donde formateas los datos:
+
       const datosActa = {
         fecha: new Date(entrega.fecha).toLocaleDateString("es-ES"),
         destinoElemento: entrega.proyecto || "Actividades operativas",
@@ -153,7 +155,12 @@ const ActaController = {
           nombre: entrega.tecnicoData ? entrega.tecnicoData.nombre : "",
           cargo: entrega.tecnicoData ? entrega.tecnicoData.cargo : "",
           cedula: entrega.tecnicoData ? entrega.tecnicoData.cedula : "",
+          firma_path:
+            entrega.wasConfirmed && entrega.tecnicoData?.firma_path
+              ? `/${entrega.tecnicoData.firma_path}`
+              : "",
         },
+
         almacenista: {
           nombre: entrega.almacenistaData
             ? entrega.almacenistaData.nombre

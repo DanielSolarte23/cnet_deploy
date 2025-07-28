@@ -3,34 +3,43 @@ module.exports = (sequelize, DataTypes) => {
     fecha: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
-      allowNull: false
+      allowNull: false,
     },
     proyecto: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
     },
     observaciones: DataTypes.TEXT,
     estado: {
-      type: DataTypes.ENUM('pendiente', '', 'parcialmente_devuelta', 'completamente_devuelta'),
-      defaultValue: 'pendiente'
+      type: DataTypes.ENUM(
+        "pendiente",
+        "entregada",
+        "parcialmente_devuelta",
+        "completamente_devuelta"
+      ),
+      defaultValue: "pendiente",
     },
-    fechaEstimadaDevolucion: DataTypes.DATE
+    wasConfirmed: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    },
+    fechaEstimadaDevolucion: DataTypes.DATE,
   });
 
   Entrega.associate = (models) => {
     Entrega.hasMany(models.EntregaProducto);
-    
+
     // Relación con el almacenista (Usuario)
     Entrega.belongsTo(models.Usuario, {
       foreignKey: "almacenista",
       as: "almacenistaData",
     });
-    
+
     // Relación con la persona que recibe (Personal)
     Entrega.belongsTo(models.Personal, {
       foreignKey: "personalId",
       as: "tecnicoData",
-      allowNull: true // Puede ser nulo como solicitaste
+      allowNull: true, // Puede ser nulo como solicitaste
     });
   };
 

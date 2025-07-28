@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const path = require('path');
+const path = require("path");
 const bodyParser = require("body-parser");
 const usuarioRoutes = require("./routes/user.Routes");
 const authRoutes = require("./routes/auth.Routes");
@@ -19,15 +19,17 @@ const PORT = process.env.PORT || 3004;
 const app = express();
 app.use(
   cors({
-    origin: "http://172.16.110.74:3000" || "http://localhost:3000",
+    origin: ["http://172.16.110.74:3000", "http://172.16.110.74:3001"],
     credentials: true,
   })
 );
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use(bodyParser.json());
 app.use("/api", usuarioRoutes);

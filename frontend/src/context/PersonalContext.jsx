@@ -24,7 +24,7 @@ export const PersonalProvider = ({ children }) => {
 
   const handleError = (error, defaultMessage) => {
     setErrors(error.response?.data?.message || defaultMessage);
-    console.log(error);
+    // console.log(error);
   };
 
   const getPersonal = async () => {
@@ -39,27 +39,120 @@ export const PersonalProvider = ({ children }) => {
     }
   };
 
-  const createPersonal = async (personal) => {
+  //   const createPersonal = async (personalData) => {
+  //   try {
+  //     const isFormData = personalData instanceof FormData;
+
+  //     const res = await createPersonalRequest(
+  //       isFormData ? personalData : JSON.stringify(personalData),
+  //       isFormData ? {} : { 'Content-Type': 'application/json' }
+  //     );
+
+  //     setPersonal((prev) => [...prev, res.data.data]);
+  //     return res.data.data;
+
+  //   } catch (error) {
+  //     handleError(error, "Error al registrar personal");
+  //     console.error("Error al crear personal:", error);
+  //     throw error;
+  //   }
+  // };
+
+  const createPersonal = async (personalData) => {
+    setLoading(true);
+    // setErrors(null);
     try {
-      const res = await createPersonalRequest(personal);
-      setPersonal((prev) => [...prev, res.data.data]);
-      return res.data.data;
-    } catch (error) {
-      handleError(error, "Error al registrar personal");
-      console.log(error);
+      // Determinar si es FormData o objeto regular
+      const isFormData = personalData instanceof FormData;
+
+      const response = await fetch(`http://172.16.110.74:3004/api/personal`, {
+        method: "POST",
+        body: personalData, // FormData se envía directamente
+        // No establecer Content-Type para FormData, el navegador lo hace automáticamente
+        ...(isFormData
+          ? {}
+          : {
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(personalData),
+            }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message ||
+            `Error ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Actualizar la lista local
+        setPersonal((prev) => [...prev, result.data]);
+        return result;
+      } else {
+        throw new Error(result.message || "Error al crear personal");
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error("Error al crear personal:", err);
+      throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const updatePersonal = async (id, personal) => {
+  const updatePersonal = async (id, personalData) => {
+    setLoading(true);
+    // setErrors(null);
     try {
-      const res = await updatePersonalRequest(id, personal);
-      setPersonal((prev) =>
-        prev.map((pers) => (pers.id === id ? res.data : pers))
+      // Determinar si es FormData o objeto regular
+      const isFormData = personalData instanceof FormData;
+
+      const response = await fetch(
+        `http://172.16.110.74:3004/api/personal/${id}`,
+        {
+          method: "PUT", // o 'PATCH' dependiendo de tu API
+          body: isFormData ? personalData : JSON.stringify(personalData),
+          // No establecer Content-Type para FormData, el navegador lo hace automáticamente
+          ...(!isFormData
+            ? {
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              }
+            : {}),
+        }
       );
-      return res.data;
-    } catch (error) {
-      handleError(error, "Error al actualizar personal");
-      console.log(error);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message ||
+            `Error ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Actualizar la lista local
+        setPersonal((prev) =>
+          prev.map((pers) => (pers.id === id ? result.data : pers))
+        );
+        return result.data;
+      } else {
+        throw new Error(result.message || "Error al actualizar personal");
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error("Error al actualizar personal:", err);
+      throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -71,7 +164,7 @@ export const PersonalProvider = ({ children }) => {
         errors,
         getPersonal,
         updatePersonal,
-        createPersonal
+        createPersonal,
       }}
     >
       {children}

@@ -220,7 +220,7 @@ export default function TablaGenerica({
         showNotification(`${titulo} guardado exitosamente`);
         if (getItems) getItems();
       } else {
-        console.log("Error al enviar datos");
+        // console.log("Error al enviar datos");
         showNotification(`Error al guardar ${titulo.toLowerCase()}`, "error");
       }
     } catch (error) {

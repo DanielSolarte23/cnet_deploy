@@ -128,3 +128,227 @@ http://localhost:3004/api/productos/2/stock
   "cantidad": 50,
   "motivo":"compra 25/10/2025"
 }
+
+{
+  "ejemplos_agregar_productos": {
+    "agregar_productos_no_seriados": {
+      "method": "PUT",
+      "url": "/entregas/123/productos",
+      "body": {
+        "accion": "agregar",
+        "productos": [
+          {
+            "ProductoId": 45,
+            "cantidad": 5
+          },
+          {
+            "ProductoId": 67,
+            "cantidad": 2
+          }
+        ]
+      }
+    },
+    "agregar_productos_seriados": {
+      "method": "PUT",
+      "url": "/entregas/123/productos",
+      "body": {
+        "accion": "agregar",
+        "productos": [
+          {
+            "ProductoId": 89,
+            "unidadesSeriadas": [101, 102, 103]
+          },
+          {
+            "ProductoId": 90,
+            "unidadesSeriadas": [201, 202]
+          }
+        ]
+      }
+    },
+    "agregar_productos_mixtos": {
+      "method": "PUT",
+      "url": "/entregas/123/productos",
+      "body": {
+        "accion": "agregar",
+        "productos": [
+          {
+            "ProductoId": 45,
+            "cantidad": 3
+          },
+          {
+            "ProductoId": 89,
+            "unidadesSeriadas": [104, 105]
+          }
+        ]
+      }
+    }
+  },
+  "ejemplos_quitar_productos": {
+    "quitar_productos_no_seriados_parcial": {
+      "method": "PUT",
+      "url": "/entregas/123/productos",
+      "body": {
+        "accion": "quitar",
+        "productos": [
+          {
+            "ProductoId": 45,
+            "cantidad": 2
+          }
+        ]
+      }
+    },
+    "quitar_productos_no_seriados_completo": {
+      "method": "PUT",
+      "url": "/entregas/123/productos",
+      "body": {
+        "accion": "quitar",
+        "productos": [
+          {
+            "ProductoId": 67
+          }
+        ]
+      },
+      "nota": "Si no se especifica cantidad, se quita todo el producto de la entrega"
+    },
+    "quitar_productos_seriados_parcial": {
+      "method": "PUT",
+      "url": "/entregas/123/productos",
+      "body": {
+        "accion": "quitar",
+        "productos": [
+          {
+            "ProductoId": 89,
+            "unidadesSeriadas": [101, 102]
+          }
+        ]
+      }
+    },
+    "quitar_productos_seriados_completo": {
+      "method": "PUT",
+      "url": "/entregas/123/productos",
+      "body": {
+        "accion": "quitar",
+        "productos": [
+          {
+            "ProductoId": 90,
+            "unidadesSeriadas": [201, 202]
+          }
+        ]
+      }
+    },
+    "quitar_productos_mixtos": {
+      "method": "PUT",
+      "url": "/entregas/123/productos",
+      "body": {
+        "accion": "quitar",
+        "productos": [
+          {
+            "ProductoId": 45,
+            "cantidad": 1
+          },
+          {
+            "ProductoId": 89,
+            "unidadesSeriadas": [103]
+          }
+        ]
+      }
+    }
+  },
+  "casos_especiales": {
+    "agregar_a_producto_existente_no_seriado": {
+      "method": "PUT",
+      "url": "/entregas/123/productos",
+      "body": {
+        "accion": "agregar",
+        "productos": [
+          {
+            "ProductoId": 45,
+            "cantidad": 3
+          }
+        ]
+      },
+      "descripcion": "Si el producto ya existe en la entrega, suma las cantidades"
+    },
+    "agregar_a_producto_existente_seriado": {
+      "method": "PUT",
+      "url": "/entregas/123/productos",
+      "body": {
+        "accion": "agregar",
+        "productos": [
+          {
+            "ProductoId": 89,
+            "unidadesSeriadas": [106, 107]
+          }
+        ]
+      },
+      "descripcion": "Si el producto seriado ya existe, agrega las nuevas unidades a la lista existente"
+    }
+  },
+  "respuestas_esperadas": {
+    "respuesta_exitosa": {
+      "success": true,
+      "message": "Productos agregados correctamente",
+      "data": {
+        "id": 123,
+        "fecha": "2024-07-24",
+        "proyecto": "Proyecto X",
+        "EntregaProductos": [
+          {
+            "ProductoId": 45,
+            "cantidad": 8,
+            "descripcion": "Cable UTP Cat 6",
+            "marca": "Panduit",
+            "color": "Azul",
+            "unidadesSeriadas": null
+          },
+          {
+            "ProductoId": 89,
+            "cantidad": 5,
+            "descripcion": "Switch Cisco 24 puertos",
+            "marca": "Cisco",
+            "color": "Negro",
+            "unidadesSeriadas": [101, 102, 103, 104, 105]
+          }
+        ]
+      }
+    },
+    "respuesta_error_stock": {
+      "success": false,
+      "message": "Error al agregar productos en la entrega",
+      "error": "Stock insuficiente para el producto: Cable UTP Cat 6"
+    },
+    "respuesta_error_unidad_no_disponible": {
+      "success": false,
+      "message": "Error al agregar productos en la entrega",
+      "error": "La unidad con ID 106 no existe, no pertenece al producto o no está disponible"
+    },
+    "respuesta_error_producto_no_en_entrega": {
+      "success": false,
+      "message": "Error al quitar productos en la entrega",
+      "error": "El producto con ID 99 no está en esta entrega"
+    },
+    "respuesta_error_entrega_con_reintegros": {
+      "success": false,
+      "message": "No se puede modificar la entrega porque tiene reintegros asociados"
+    }
+  },
+  "notas_implementacion": {
+    "ruta_sugerida": "PUT /entregas/:id/productos",
+    "validaciones": [
+      "La entrega debe existir",
+      "No debe tener reintegros asociados",
+      "Para agregar: verificar stock disponible",
+      "Para agregar seriados: verificar que las unidades estén disponibles",
+      "Para quitar: verificar que el producto/unidades estén en la entrega",
+      "Actualizar estados de unidades seriadas (disponible <-> instalacion)",
+      "Actualizar stock del producto",
+      "Generar notificaciones de stock bajo si es necesario"
+    ],
+    "transacciones": "Todo el proceso debe ejecutarse en una transacción para mantener consistencia",
+    "estados_unidades_seriadas": {
+      "disponible": "Unidad disponible en almacén",
+      "instalacion": "Unidad entregada para instalación",
+      "devuelta": "Unidad devuelta al almacén"
+    }
+  }
+}

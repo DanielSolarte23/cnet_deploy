@@ -52,10 +52,13 @@ const authController = {
         expiresIn: "1d",
       });
 
+      // Configurar cookie con las mismas opciones que en el logout
       res.cookie("jwt", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
         maxAge: 24 * 60 * 60 * 1000, // 1 día
+        path: "/"
       });
 
       res.json({
@@ -75,11 +78,27 @@ const authController = {
   },
 
   async logout(req, res) {
-    res.cookie("jwt", "", {
-      httpOnly: true,
-      expires: new Date(0),
-    });
-    res.json({ message: "logout correcto" });
+    try {
+      // Limpiar la cookie httpOnly con las mismas opciones que cuando se creó
+      res.cookie("jwt", "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+        expires: new Date(0), // Expirar inmediatamente
+        path: "/"
+      });
+      
+      res.status(200).json({ 
+        message: "Logout correcto",
+        success: true 
+      });
+    } catch (error) {
+      console.error("Error en logout:", error);
+      res.status(500).json({ 
+        message: "Error al cerrar sesión",
+        error: error.message 
+      });
+    }
   },
 
   async verifyToken(req, res) {
@@ -107,6 +126,8 @@ const authController = {
           nombre: usuarioEncontrado.nombre,
           cedula: usuarioEncontrado.cedula,
           telefono: usuarioEncontrado.telefono,
+          correo: usuarioEncontrado.correo,
+          username: usuarioEncontrado.username,
           rol: usuarioEncontrado.rol,
         });
       });

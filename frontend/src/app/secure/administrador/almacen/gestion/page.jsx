@@ -276,7 +276,7 @@ export default function GestionPage() {
       }
 
       const result = await response.json();
-      console.log("Reintegro creado:", result);
+      // console.log("Reintegro creado:", result);
 
       // Mostrar notificación de éxito
       showNotification("Reintegro creado exitosamente", "success");
@@ -378,11 +378,17 @@ export default function GestionPage() {
                   </td>
                   <td className="px-4 py-1 md:px-6 md:py-4 text-center">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold ${getEstadoClase(
+                      className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getEstadoClase(
                         entrega.estado
                       )}`}
                     >
-                      {entrega.estado || "Sin estado"}
+                      {entrega.estado === "parcialmente_devuelta"
+                        ? "Reintegro parcial"
+                        : entrega.estado === "completamente_devuelta"
+                        ? "Reintegro completo"
+                        : entrega.estado === "pendiente" 
+                        ? "Sin reintegro"
+                        : entrega.estado || "Sin estado"}
                     </span>
                   </td>
 

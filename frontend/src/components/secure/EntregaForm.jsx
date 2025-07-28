@@ -9,6 +9,8 @@ import {
   FileText,
   AlertCircle,
   Barcode,
+  Search,
+  X,
 } from "lucide-react";
 import { usePersonal } from "@/context/PersonalContext";
 import { useProductos } from "@/context/ProductosContext";
@@ -37,10 +39,11 @@ export default function FormularioEntrega({
       observaciones: "",
       estado: "pendiente",
       fechaEstimadaDevolucion: "",
-      almacenista: user?.id || null, // Cambiar de 1 fijo a user?.id
+      almacenista: user?.id || null,
       personalId: "",
     },
     productos: [],
+    recipientEmail: "",
   });
 
   const [productoSeleccionado, setProductoSeleccionado] = useState({
@@ -49,6 +52,16 @@ export default function FormularioEntrega({
     tieneSeriales: false,
     unidadesSeriadas: [],
   });
+
+  // Estados para búsqueda de productos
+  const [busquedaProducto, setBusquedaProducto] = useState("");
+  const [mostrarListaProductos, setMostrarListaProductos] = useState(false);
+  const [productoSeleccionadoInfo, setProductoSeleccionadoInfo] =
+    useState(null);
+
+  // Estados para búsqueda de unidades seriadas
+  const [busquedaSerial, setBusquedaSerial] = useState("");
+  const [mostrarListaSeriales, setMostrarListaSeriales] = useState(false);
 
   // Estado para almacenar las unidades disponibles del producto seleccionado
   const [unidadesDisponibles, setUnidadesDisponibles] = useState([]);
@@ -84,7 +97,7 @@ export default function FormularioEntrega({
           `/products/${productoSeleccionado.ProductoId}/unidades`
         );
 
-        console.log("Unidades disponibles:", response.data.data);
+        // console.log("Unidades disponibles:", response.data.data);
         setUnidadesDisponibles(response.data.data || []); // Asegurar que sea un array
       } catch (error) {
         console.error("Error al cargar unidades:", error);
@@ -96,16 +109,42 @@ export default function FormularioEntrega({
     cargarUnidadesDisponibles();
   }, [productoSeleccionado.ProductoId, productoSeleccionado.tieneSeriales]);
 
+  // Filtrar productos basado en la búsqueda
+  const productosFiltrados = productos.filter((producto) =>
+    `${producto.descripcion} ${producto.modelo}`
+      .toLowerCase()
+      .includes(busquedaProducto.toLowerCase())
+  );
+
+  // Filtrar unidades seriadas basado en la búsqueda
+  const unidadesFiltradas = unidadesDisponibles.filter((unidad) =>
+    unidad.serial.toLowerCase().includes(busquedaSerial.toLowerCase())
+  );
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    setFormData({
-      ...formData,
-      entrega: {
-        ...formData.entrega,
-        [name]: value, // Mantener como string en el estado, convertir al enviar
-      },
-    });
+    if (name === "personalId") {
+
+      const selectedPersonal = personals.find((p) => p.id === parseInt(value));
+
+      setFormData({
+        ...formData,
+        entrega: {
+          ...formData.entrega,
+          [name]: value,
+        },
+        recipientEmail: selectedPersonal?.correo || "",
+      });
+    } else {
+      setFormData({
+        ...formData,
+        entrega: {
+          ...formData.entrega,
+          [name]: value,
+        },
+      });
+    }
   };
 
   const handleProductoChange = (e) => {
@@ -140,6 +179,32 @@ export default function FormularioEntrega({
     }
   };
 
+  // Función para seleccionar un producto desde la lista filtrada
+  const seleccionarProducto = (producto) => {
+    setProductoSeleccionado({
+      ProductoId: producto.id,
+      cantidad: 1,
+      tieneSeriales: producto.tieneSeriado || false,
+      unidadesSeriadas: [],
+    });
+    setProductoSeleccionadoInfo(producto);
+    setBusquedaProducto(`${producto.descripcion} - ${producto.modelo}`);
+    setMostrarListaProductos(false);
+  };
+
+  // Función para limpiar la selección de producto
+  const limpiarSeleccionProducto = () => {
+    setProductoSeleccionado({
+      ProductoId: "",
+      cantidad: 1,
+      tieneSeriales: false,
+      unidadesSeriadas: [],
+    });
+    setProductoSeleccionadoInfo(null);
+    setBusquedaProducto("");
+    setMostrarListaProductos(false);
+  };
+
   const handleSerialChange = (e) => {
     // Convertir valores a números y asegurarse de que todos sean válidos
     const selectedOptions = Array.from(e.target.selectedOptions, (option) => {
@@ -151,6 +216,26 @@ export default function FormularioEntrega({
       ...productoSeleccionado,
       unidadesSeriadas: selectedOptions,
       cantidad: selectedOptions.length, // La cantidad es igual al número de unidades seleccionadas
+    });
+  };
+
+  // Función para seleccionar/deseleccionar una unidad seriada
+  const toggleUnidadSeriada = (unidadId) => {
+    const isSelected = productoSeleccionado.unidadesSeriadas.includes(unidadId);
+    let nuevasUnidades;
+
+    if (isSelected) {
+      nuevasUnidades = productoSeleccionado.unidadesSeriadas.filter(
+        (id) => id !== unidadId
+      );
+    } else {
+      nuevasUnidades = [...productoSeleccionado.unidadesSeriadas, unidadId];
+    }
+
+    setProductoSeleccionado({
+      ...productoSeleccionado,
+      unidadesSeriadas: nuevasUnidades,
+      cantidad: nuevasUnidades.length,
     });
   };
 
@@ -254,6 +339,9 @@ export default function FormularioEntrega({
       tieneSeriales: false,
       unidadesSeriadas: [],
     });
+    setProductoSeleccionadoInfo(null);
+    setBusquedaProducto("");
+    setBusquedaSerial("");
 
     setError("");
   };
@@ -293,19 +381,24 @@ export default function FormularioEntrega({
       return;
     }
 
+    if (!formData.recipientEmail) {
+      setError("El técnico seleccionado no tiene email registrado");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
       const dataToSend = {
-        ...formData,
+        ...formData, //
         entrega: {
           ...formData.entrega,
           almacenista: user.id,
         },
       };
 
-      // console.log("Datos a enviar:", dataToSend);
+      console.log("Datos a enviar:", dataToSend);
 
       await createEntrega(dataToSend);
       setSuccess("Entrega creada correctamente");
@@ -322,8 +415,13 @@ export default function FormularioEntrega({
           personalId: "",
         },
         productos: [],
+        recipientEmail: "",
       });
+
+      handleCloseModal()
+      showNotification("Entrega registrada correctamente", "success")
     } catch (error) {
+      showNotification("Error al crear la entrea", error)
       console.error("Error completo:", error);
       setError(
         error.response?.data?.message ||
@@ -450,14 +548,19 @@ export default function FormularioEntrega({
                 {Array.isArray(personals) &&
                   personals.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.nombre} - {p.cargo}
+                      {p.nombre} - {p.cargo}{" "}
+                      {/* {p.correo ? `(${p.correo})` : "(Sin email)"} */}
                     </option>
                   ))}
               </select>
-              {/* Agregar indicador visual del valor seleccionado para debugging */}
-              {formData.entrega.personalId && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Técnico seleccionado ID: {formData.entrega.personalId}
+              {formData.recipientEmail && (
+                <p className="text-xs text-green-600 mt-1">
+                  ✅ Email de confirmación: {formData.recipientEmail}
+                </p>
+              )}
+              {formData.entrega.personalId && !formData.recipientEmail && (
+                <p className="text-xs text-orange-600 mt-1">
+                  ⚠️ El técnico seleccionado no tiene email registrado
                 </p>
               )}
             </div>
@@ -481,28 +584,87 @@ export default function FormularioEntrega({
               <Package className="mr-2" /> Productos a Entregar
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div>
+            <div className="grid grid-cols-1 gap-4 mb-4">
+              {/* Búsqueda de productos */}
+              <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                  Producto
+                  Buscar Producto
                 </label>
-                <select
-                  name="ProductoId"
-                  value={productoSeleccionado.ProductoId}
-                  onChange={handleProductoChange}
-                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-slate-500 dark:bg-slate-800"
-                >
-                  <option value="">Seleccione un producto</option>
-                  {Array.isArray(productos) &&
-                    productos.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.descripcion} - {p.modelo} (Stock: {p.stock})
-                      </option>
-                    ))}
-                </select>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={busquedaProducto}
+                    onChange={(e) => {
+                      setBusquedaProducto(e.target.value);
+                      setMostrarListaProductos(true);
+                    }}
+                    onFocus={() => setMostrarListaProductos(true)}
+                    placeholder="Escriba para buscar un producto..."
+                    className="w-full pl-10 pr-10 p-2 border rounded-md focus:ring-2 focus:ring-slate-500 dark:bg-slate-800"
+                  />
+                  {productoSeleccionadoInfo && (
+                    <button
+                      type="button"
+                      onClick={limpiarSeleccionProducto}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    >
+                      <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Lista de productos filtrados */}
+                {mostrarListaProductos && busquedaProducto && (
+                  <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {productosFiltrados.length > 0 ? (
+                      productosFiltrados.map((producto) => (
+                        <div
+                          key={producto.id}
+                          onClick={() => seleccionarProducto(producto)}
+                          className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer border-b border-gray-100 dark:border-slate-600 last:border-b-0"
+                        >
+                          <div className="font-medium text-gray-900 dark:text-slate-200">
+                            {producto.descripcion} - {producto.modelo}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-slate-400">
+                            Stock: {producto.stock}
+                            {producto.tieneSeriado && " • Con Serial"}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-2 text-gray-500 dark:text-slate-400">
+                        No se encontraron productos
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {productoSeleccionado.ProductoId && (
+              {/* Información del producto seleccionado */}
+              {productoSeleccionadoInfo && (
+                <div className="bg-blue-50 dark:bg-slate-800 p-3 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-blue-900 dark:text-blue-200">
+                        {productoSeleccionadoInfo.descripcion} -{" "}
+                        {productoSeleccionadoInfo.modelo}
+                      </p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        Stock disponible: {productoSeleccionadoInfo.stock}
+                        {productoSeleccionadoInfo.tieneSeriado &&
+                          " • Producto con serial"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Checkbox para seriales si el producto lo soporta */}
+              {productoSeleccionado.ProductoId && productoSeleccionadoInfo && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1 flex items-center">
                     <Barcode className="h-4 w-4 mr-1" />
@@ -523,63 +685,105 @@ export default function FormularioEntrega({
                 </div>
               )}
 
+              {/* Selección de unidades seriadas o cantidad */}
               {productoSeleccionado.tieneSeriales ? (
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                    Seleccionar Unidades (Múltiple)
+                    Buscar y Seleccionar Unidades
                   </label>
-                  <select
-                    multiple
-                    size={5}
-                    value={productoSeleccionado.unidadesSeriadas || []}
-                    onChange={handleSerialChange}
-                    className="w-full p-2 border rounded-md focus:ring-2 focus:ring-slate-500 dark:bg-slate-800"
-                  >
-                    {Array.isArray(unidadesDisponibles) &&
-                    unidadesDisponibles.length > 0 ? (
-                      unidadesDisponibles.map((unidad) => (
-                        <option key={unidad.id} value={unidad.id}>
-                          {unidad.serial}
-                        </option>
+
+                  {/* Búsqueda de seriales */}
+                  <div className="relative mb-2">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Search className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      value={busquedaSerial}
+                      onChange={(e) => setBusquedaSerial(e.target.value)}
+                      placeholder="Buscar por número de serie..."
+                      className="w-full pl-10 p-2 border rounded-md focus:ring-2 focus:ring-slate-500 dark:bg-slate-800"
+                    />
+                  </div>
+
+                  {/* Lista de unidades filtradas */}
+                  <div className="border rounded-md max-h-40 overflow-y-auto dark:border-slate-600">
+                    {unidadesFiltradas.length > 0 ? (
+                      unidadesFiltradas.map((unidad) => (
+                        <div
+                          key={unidad.id}
+                          onClick={() => toggleUnidadSeriada(unidad.id)}
+                          className={`px-3 py-2 cursor-pointer border-b border-gray-100 dark:border-slate-600 last:border-b-0 ${
+                            productoSeleccionado.unidadesSeriadas.includes(
+                              unidad.id
+                            )
+                              ? "bg-blue-100 dark:bg-blue-900/50"
+                              : "hover:bg-gray-50 dark:hover:bg-slate-700"
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={productoSeleccionado.unidadesSeriadas.includes(
+                                unidad.id
+                              )}
+                              onChange={() => {}} // Manejado por el onClick del div
+                              className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm">{unidad.serial}</span>
+                          </div>
+                        </div>
                       ))
-                    ) : (
-                      <option value="" disabled>
+                    ) : unidadesDisponibles.length === 0 ? (
+                      <div className="px-3 py-2 text-gray-500 dark:text-slate-400 text-sm">
                         No hay unidades disponibles
-                      </option>
+                      </div>
+                    ) : (
+                      <div className="px-3 py-2 text-gray-500 dark:text-slate-400 text-sm">
+                        No se encontraron unidades con ese criterio
+                      </div>
                     )}
-                  </select>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Seleccionados:{" "}
+                  </div>
+
+                  <p className="text-sm text-gray-500 mt-2">
+                    Seleccionadas:{" "}
                     {productoSeleccionado.unidadesSeriadas.length} unidades
                   </p>
                 </div>
               ) : (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                    Cantidad
-                  </label>
-                  <input
-                    type="number"
-                    name="cantidad"
-                    value={productoSeleccionado.cantidad}
-                    onChange={handleProductoChange}
-                    min="1"
-                    className="w-full p-2 border rounded-md focus:ring-2 focus:ring-slate-500 dark:bg-slate-800"
-                  />
-                </div>
+                productoSeleccionadoInfo && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                      Cantidad
+                    </label>
+                    <input
+                      type="number"
+                      name="cantidad"
+                      value={productoSeleccionado.cantidad}
+                      onChange={handleProductoChange}
+                      min="1"
+                      max={productoSeleccionadoInfo.stock}
+                      className="w-full p-2 border rounded-md focus:ring-2 focus:ring-slate-500 dark:bg-slate-800"
+                    />
+                  </div>
+                )
               )}
 
-              <div className="flex items-end">
-                <button
-                  type="button"
-                  onClick={agregarProducto}
-                  className="bg-yellow-500 text-slate-950 px-4 py-2 rounded-md hover:bg-yellow-600 w-full"
-                >
-                  Agregar Producto
-                </button>
-              </div>
+              {/* Botón para agregar producto */}
+              {productoSeleccionadoInfo && (
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={agregarProducto}
+                    className="bg-yellow-500 text-slate-950 px-6 py-2 rounded-md hover:bg-yellow-600 w-full font-medium"
+                  >
+                    Agregar Producto
+                  </button>
+                </div>
+              )}
             </div>
 
+            {/* Tabla de productos agregados */}
             {formData.productos.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full bg-white dark:bg-slate-950">
@@ -608,7 +812,7 @@ export default function FormularioEntrega({
                           <button
                             type="button"
                             onClick={() => eliminarProducto(index)}
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 px-2 py-1 rounded"
                           >
                             Eliminar
                           </button>
@@ -619,9 +823,13 @@ export default function FormularioEntrega({
                 </table>
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-4">
-                No hay productos agregados
-              </p>
+              <div className="text-center py-8 text-gray-500 dark:text-slate-400">
+                <Package className="mx-auto h-12 w-12 mb-2 opacity-50" />
+                <p>No hay productos agregados</p>
+                <p className="text-sm">
+                  Use el buscador arriba para agregar productos
+                </p>
+              </div>
             )}
           </div>
 

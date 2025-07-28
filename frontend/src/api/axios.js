@@ -18,7 +18,7 @@ instance.interceptors.request.use(
     if (token) {
       // Agregar token al header Authorization
       config.headers.Authorization = `Bearer ${token}`;
-      console.log("Token agregado al header:", token.substring(0, 20) + "...");
+      // console.log("Token agregado al header:", token.substring(0, 20) + "...");
     }
     
     return config;
@@ -33,7 +33,7 @@ instance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      console.log("Sesión expirada o no autenticado - limpiando cookies");
+      // console.log("Sesión expirada o no autenticado - limpiando cookies");
       
       Cookies.remove("token", { path: "/" });
       Cookies.remove("jwt", { path: "/" });

@@ -35,7 +35,7 @@ export function ProductosProvider({ children }) {
 
   const handleError = (error, defaultMessage) => {
     setErrors(error.response?.data?.message || defaultMessage);
-    console.log(error);
+    // console.log(error);
   };
 
   const getProductos = async () => {
@@ -43,10 +43,10 @@ export function ProductosProvider({ children }) {
     try {
       const res = await getProductosRequest();
       setProductos(res.data.data);
-      console.log("Datos recibidos:", res.data.data);
+      // console.log("Datos recibidos:", res.data.data);
     } catch (error) {
       handleError(error, "Error al cargar productos");
-      console.log(error);
+      // console.log(error);
     } finally {
       setLoading(false);
     }
@@ -57,10 +57,10 @@ export function ProductosProvider({ children }) {
   //   try {
   //     const res = await getProductsRequest();
   //     setProductos(res.data.data);
-  //     console.log("Datos recibidos:", res.data.data);
+  // //     console.log("Datos recibidos:", res.data.data);
   //   } catch (error) {
   //     handleError(error, "Error al cargar productos");
-  //     console.log(error);
+  // //     console.log(error);
   //   } finally {
   //     setLoading(false);
   //   }
@@ -73,25 +73,28 @@ export function ProductosProvider({ children }) {
       return res.data;
     } catch (error) {
       handleError(error, "Error al cargar producto");
-      console.log(error);
+      // console.log(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const getStockBajo = async () => {
-    setLoading(true);
-    try {
-      const res = await getStockBajoRequest();
+const getStockBajo = async () => {
+  setLoading(true);
+  try {
+    const res = await getStockBajoRequest();
+    // Solo actualizar si hay datos válidos
+    if (res.data.data && Array.isArray(res.data.data)) {
       setProductos(res.data.data);
-      // console.log("Datos recibidos:", res.data.data);
-    } catch (error) {
-      handleError(error, "Error al cargar productos con stock bajo");
-      console.log(error);
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (error) {
+    handleError(error, "Error al cargar productos con stock bajo");
+    // Opcional: mantener los productos anteriores en caso de error
+    // setProductos([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const createProducto = async (producto) => {
     try {
@@ -100,7 +103,7 @@ export function ProductosProvider({ children }) {
       return res.data;
     } catch (error) {
       handleError(error, "Error al crear producto");
-      console.log(error);
+      // console.log(error);
     }
   };
 
@@ -113,7 +116,7 @@ export function ProductosProvider({ children }) {
       return res.data;
     } catch (error) {
       handleError(error, "Error al actualizar producto");
-      console.log(error);
+      // console.log(error);
     }
   };
 
@@ -123,7 +126,7 @@ export function ProductosProvider({ children }) {
       setProductos((prev) => prev.filter((prod) => prod._id !== id));
     } catch (error) {
       handleError(error, "Error al eliminar producto");
-      console.log(error);
+      // console.log(error);
     }
   };
 
@@ -132,10 +135,10 @@ export function ProductosProvider({ children }) {
     try {
       const res = await getProductosByCategoriaRequest(categoria);
       setProductos(res.data.data);
-      console.log("Datos recibidos:", res.data.data);
+      // console.log("Datos recibidos:", res.data.data);
     } catch (error) {
       handleError(error, "Error al cargar productos por categoria");
-      console.log(error);
+      // console.log(error);
     } finally {
       setLoading(false);
     }
@@ -152,7 +155,7 @@ export function ProductosProvider({ children }) {
       };
     } catch (error) {
       handleError(error, "Error al cargar producto por stantre");
-      console.log(error);
+      // console.log(error);
       // Devolver un objeto con la misma estructura en caso de error
       return {
         success: false,
@@ -170,7 +173,7 @@ export function ProductosProvider({ children }) {
       return res.data.count || 0;
     } catch (error) {
       handleError(error, "Error al cargar cantidad de productos por stantre");
-      console.log(error);
+      // console.log(error);
       return 0;
     }
   };
@@ -187,7 +190,7 @@ export function ProductosProvider({ children }) {
       return res.data;
     } catch (error) {
       handleError(error, "Error al actualizar stock");
-      console.log(error);
+      // console.log(error);
       throw error; // Propagar el error para que pueda ser manejado por el componente
     }
   };

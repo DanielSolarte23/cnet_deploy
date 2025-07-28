@@ -225,7 +225,7 @@ const FormPrueba = () => {
         dataToSend.unidades = formData.unidades;
       }
 
-      console.log("Data to send:", dataToSend);
+      // console.log("Data to send:", dataToSend);
 
       // Usar la función del contexto para crear el producto
       await createProducto(dataToSend);

@@ -210,13 +210,13 @@ export default function FormularioMultipaso({
         }
       }
 
-      console.log("Enviando datos:", productoData);
+      // console.log("Enviando datos:", productoData);
 
       // Esperar a que se complete la creación del producto
       await createProducto(productoData);
 
       showNotification("Producto registrado correctamente");
-      console.log("Producto registrado correctamente");
+      // console.log("Producto registrado correctamente");
       setSuccess(true);
       resetForm();
 
@@ -227,7 +227,7 @@ export default function FormularioMultipaso({
 
       handleCloseModal();
     } catch (error) {
-      console.log(error);
+      // console.log(error);
       showNotification("Error al registrar producto", "error");
       setSuccess(false);
     }

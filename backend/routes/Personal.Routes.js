@@ -1,11 +1,13 @@
 const PersonalController = require("../controllers/Personal.Controller");
 const express = require("express");
 const router = express.Router();
+const upload = require('../services/multer');
 
 //rutas
 router.post("/personal", PersonalController.create); // Crear un nuevo personal
 router.get("/personal", PersonalController.findAll); // Obtener todos los personales
 router.get("/personal/activo", PersonalController.findActive); // Obtener personal activo
+router.get("/personal/:id/firma", PersonalController.getFirma); // Obtener Firma
 router.get("/personal/:id", PersonalController.findOne); // Obtener personal por ID
 router.put("/personal/:id", PersonalController.update); // Actualizar personal por ID
 router.delete("/personal/:id", PersonalController.delete); // Eliminar personal por ID

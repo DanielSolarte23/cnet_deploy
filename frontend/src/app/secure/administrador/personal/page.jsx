@@ -149,7 +149,7 @@ export default function UsuariosTabla() {
   const openModalStock = (personal) => {
     setModalStock(true);
     setProductoSeleccionado(personal);
-    console.log(personal);
+    // console.log(personal);
   };
 
   const handleCloseModalStock = () => {

@@ -10,8 +10,11 @@ import {
   Eye,
   EyeOff,
   X,
+  Upload,
+  FileImage,
+  Trash2,
 } from "lucide-react";
-import { usePersonal, cre } from "@/context/PersonalContext";
+import { usePersonal } from "@/context/PersonalContext";
 
 export default function PersonalForm({
   personal = null,
@@ -40,6 +43,11 @@ export default function PersonalForm({
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Estados para el manejo de la firma
+  const [firmaFile, setFirmaFile] = useState(null);
+  const [firmaPreview, setFirmaPreview] = useState(null);
+  const [existingFirmaUrl, setExistingFirmaUrl] = useState(null);
+
   // Cargar datos si estamos editando
   useEffect(() => {
     if (personal) {
@@ -60,9 +68,16 @@ export default function PersonalForm({
         password: "", // No cargar contraseña por seguridad
         activo: personal.activo !== undefined ? personal.activo : true,
       });
+
+      // Si existe firma, establecer la URL
+      if (personal.firma_path) {
+        setExistingFirmaUrl(`/api/personal/${personal.id}/firma`);
+      }
+
       setIsEditing(true);
     } else {
       setIsEditing(false);
+      setExistingFirmaUrl(null);
     }
   }, [personal]);
 
@@ -82,6 +97,9 @@ export default function PersonalForm({
     });
     setIsEditing(false);
     setErrors({});
+    setFirmaFile(null);
+    setFirmaPreview(null);
+    setExistingFirmaUrl(null);
   };
 
   const handleInputChange = (e) => {
@@ -97,6 +115,60 @@ export default function PersonalForm({
         ...prev,
         [name]: "",
       }));
+    }
+  };
+
+  // Manejar selección de archivo de firma
+  const handleFirmaChange = (e) => {
+    const file = e.target.files[0];
+
+    if (file) {
+      // Validar tipo de archivo
+      const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+      if (!allowedTypes.includes(file.type)) {
+        setErrors((prev) => ({
+          ...prev,
+          firma: "Solo se permiten archivos PNG, JPG o JPEG",
+        }));
+        return;
+      }
+
+      // Validar tamaño (2MB máximo)
+      if (file.size > 2 * 1024 * 1024) {
+        setErrors((prev) => ({
+          ...prev,
+          firma: "El archivo no puede ser mayor a 2MB",
+        }));
+        return;
+      }
+
+      setFirmaFile(file);
+
+      // Crear preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFirmaPreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+
+      // Limpiar error de firma si existía
+      if (errors.firma) {
+        setErrors((prev) => ({
+          ...prev,
+          firma: "",
+        }));
+      }
+    }
+  };
+
+  // Eliminar firma seleccionada
+  const handleRemoveFirma = () => {
+    setFirmaFile(null);
+    setFirmaPreview(null);
+    // Limpiar el input file
+    const fileInput = document.getElementById("firma-input");
+    if (fileInput) {
+      fileInput.value = "";
     }
   };
 
@@ -139,20 +211,29 @@ export default function PersonalForm({
     setIsSubmitting(true);
 
     try {
-      // Preparar datos para el envío
-      const submitData = {
-        ...formData,
-        expedicion: formData.expedicion
-          ? new Date(formData.expedicion).toISOString()
-          : null,
-        fecha_nacimiento: formData.fecha_nacimiento
-          ? new Date(formData.fecha_nacimiento).toISOString()
-          : null,
-      };
+      // Crear FormData para enviar archivos
+      const submitData = new FormData();
 
-      // Si estamos editando y no hay contraseña, no enviarla
-      if (isEditing && !formData.password.trim()) {
-        delete submitData.password;
+      // Agregar todos los campos del formulario
+      Object.keys(formData).forEach((key) => {
+        if (key === "expedicion" || key === "fecha_nacimiento") {
+          // Convertir fechas a ISO string si existen
+          if (formData[key]) {
+            submitData.append(key, new Date(formData[key]).toISOString());
+          }
+        } else if (key === "password") {
+          // Solo agregar contraseña si no estamos editando o si tiene valor
+          if (!isEditing || formData[key].trim()) {
+            submitData.append(key, formData[key]);
+          }
+        } else {
+          submitData.append(key, formData[key]);
+        }
+      });
+
+      // Agregar archivo de firma si existe
+      if (firmaFile) {
+        submitData.append("firma", firmaFile);
       }
 
       let result;
@@ -217,6 +298,7 @@ export default function PersonalForm({
     "Coordinador",
     "Jefe de Área",
     "Gerente",
+    "Soporte",
   ];
 
   const departamentos = [
@@ -497,6 +579,107 @@ export default function PersonalForm({
                 </div>
                 {errors.password && (
                   <p className="text-red-400 text-sm">{errors.password}</p>
+                )}
+              </div>
+
+              {/* Firma */}
+              <div className="space-y-2 md:col-span-2">
+                <label className="flex items-center text-sm font-medium text-slate-300">
+                  <FileImage className="w-4 h-4 mr-2 text-yellow-500" />
+                  Firma Digital
+                  <span className="text-xs text-slate-500 ml-2">
+                    (PNG - máx 2MB)
+                  </span>
+                </label>
+
+                {/* Input de archivo */}
+                <div className="relative">
+                  <input
+                    id="firma-input"
+                    type="file"
+                    accept="image/png"
+                    onChange={handleFirmaChange}
+                    className="hidden"
+                  />
+
+                  {!firmaPreview && !existingFirmaUrl && (
+                    <label
+                      htmlFor="firma-input"
+                      className={`w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-yellow-500 transition-colors ${
+                        errors.firma ? "border-red-500" : "border-slate-600"
+                      }`}
+                    >
+                      <Upload className="w-8 h-8 text-slate-400 mb-2" />
+                      <span className="text-slate-400 text-sm text-center">
+                        Haz clic para seleccionar la firma
+                        <br />
+                        <span className="text-xs">PNG (máx 2MB)</span>
+                      </span>
+                    </label>
+                  )}
+
+                  {/* Preview de nueva firma */}
+                  {firmaPreview && (
+                    <div className="relative">
+                      <div className="w-full h-32 bg-white border border-slate-600 rounded-lg flex items-center justify-center overflow-hidden">
+                        <img
+                          src={firmaPreview}
+                          alt="Preview de firma"
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveFirma}
+                        className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-1 rounded-full transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-sm text-slate-400">
+                          {firmaFile?.name}
+                        </span>
+                        <label
+                          htmlFor="firma-input"
+                          className="text-sm text-yellow-500 hover:text-yellow-400 cursor-pointer"
+                        >
+                          Cambiar firma
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Firma existente (modo edición) */}
+                  {!firmaPreview && existingFirmaUrl && (
+                    <div className="relative">
+                      <div className="w-full h-32 bg-slate-900 border border-slate-600 rounded-lg flex items-center justify-center overflow-hidden">
+                        <img
+                          src={existingFirmaUrl}
+                          alt="Firma actual"
+                          className="max-h-full max-w-full object-contain"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            setExistingFirmaUrl(null);
+                          }}
+                        />
+                      </div>
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-sm text-slate-400">
+                          Firma actual
+                        </span>
+                        <label
+                          htmlFor="firma-input"
+                          className="text-sm text-yellow-500 hover:text-yellow-400 cursor-pointer"
+                        >
+                          Cambiar firma
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {errors.firma && (
+                  <p className="text-red-400 text-sm">{errors.firma}</p>
                 )}
               </div>
 

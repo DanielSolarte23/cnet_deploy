@@ -31,7 +31,7 @@ export function NotificacionesProvider({ children }) {
 
   const handleError = (error, defaultMessage) => {
     setErrors(error.response?.data?.message || defaultMessage);
-    console.log(error);
+    // console.log(error);
   };
 
   const getNotificaciones = async () => {
@@ -39,10 +39,10 @@ export function NotificacionesProvider({ children }) {
     try {
       const res = await getNotificacionesRequest();
       setNotificaciones(res.data.data);
-      console.log("Datos recibidos:", res.data.data);
+      // console.log("Datos recibidos:", res.data.data);
     } catch (error) {
       handleError(error, "Error al cargar notificaciones");
-      console.log(error);
+      // console.log(error);
     } finally {
       setLoading(false);
     }
@@ -55,7 +55,7 @@ export function NotificacionesProvider({ children }) {
       return res.data;
     } catch (error) {
       handleError(error, "Error al cargar notificacion");
-      console.log(error);
+      // console.log(error);
     } finally {
       setLoading(false);
     }
@@ -67,7 +67,7 @@ export function NotificacionesProvider({ children }) {
       setNotificaciones((prev) => [...prev, res.data]);
       return res.data;
     } catch (error) {
-      console.log(error);
+      // console.log(error);
       handleError(error, "Error al crear notificacion");
       return null; // o lanza un error para manejarlo en el componente
     }
@@ -83,7 +83,7 @@ export function NotificacionesProvider({ children }) {
       );
       return res.data;
     } catch (error) {
-      console.log(error);
+      // console.log(error);
       handleError(error, "Error al actualizar notificacion");
       return null; // o lanza un error para manejarlo en el componente
     }
@@ -99,7 +99,7 @@ export function NotificacionesProvider({ children }) {
       }
     } catch (error) {
       handleError(error, "Error al eliminar notificacion");
-      console.log(error);
+      // console.log(error);
     }
   };
 
@@ -108,10 +108,10 @@ export function NotificacionesProvider({ children }) {
     try {
       const res = await getNotificacionesByUserRequest(userId);
       setNotificaciones(res.data); // En lugar de hacer res.json()
-      // console.log("Datos recibidos:", res.data);
+      // // console.log("Datos recibidos:", res.data);
     } catch (error) {
       handleError(error, "Error al cargar notificaciones por usuario");
-      console.log(error);
+      // console.log(error);
     } finally {
       setLoading(false);
     }

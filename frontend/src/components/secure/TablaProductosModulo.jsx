@@ -28,7 +28,7 @@ export default function ProductosTabla() {
     if (stantId) {
       getProductoByStantre(stantId)
         .then((resultado) => {
-          console.log("Resultado completo:", resultado);
+          // console.log("Resultado completo:", resultado);
 
           // Comprobar si existe la propiedad data y si es un array
           if (
@@ -38,7 +38,7 @@ export default function ProductosTabla() {
             Array.isArray(resultado.data)
           ) {
             setProductos(resultado.data);
-            console.log("Datos recibidos:", resultado.data);
+            // console.log("Datos recibidos:", resultado.data);
           } else if (
             resultado &&
             resultado.success &&
@@ -47,16 +47,16 @@ export default function ProductosTabla() {
           ) {
             // Estructura alternativa
             setProductos(resultado.data.data);
-            console.log(
-              "Datos recibidos (estructura anidada):",
-              resultado.data.data
-            );
+            // console.log(
+            //   "Datos recibidos (estructura anidada):",
+            //   resultado.data.data
+            // );
           } else {
             setProductos([]);
-            console.log(
-              "No se encontraron datos o formato incorrecto:",
-              resultado
-            );
+            // console.log(
+            //   "No se encontraron datos o formato incorrecto:",
+            //   resultado
+            // );
           }
         })
         .catch((error) => {
@@ -213,7 +213,7 @@ export default function ProductosTabla() {
   //       rol: producto.rol || "",
   //       contraseña: "",
   //     });
-  //     console.log(producto);
+  // //     console.log(producto);
   //   } else {
   //     setProductoSeleccionado(null);
   //     setNuevoUsuario({
@@ -246,7 +246,7 @@ export default function ProductosTabla() {
   //   }
 
   //   try {
-  //     console.log("Datos a enviar:", datosParaEnviar);
+  // //     console.log("Datos a enviar:", datosParaEnviar);
   //     const resultado = productoSeleccionado
   //       ? await updateUsuario(productoSeleccionado.id, datosParaEnviar)
   //       : await createUsuario(datosParaEnviar);
@@ -269,15 +269,15 @@ export default function ProductosTabla() {
   //         contraseña: "",
   //       });
   //       showNotification("Usuario guardado exitosamente");
-  //       console.log("Resultado de la API:", resultado);
+  // //       console.log("Resultado de la API:", resultado);
   //       getUsuarios();
   //     } else {
-  //       console.log("Resultado de la API:", resultado);
-  //       console.log("Error al enviar datos");
+  // //       console.log("Resultado de la API:", resultado);
+  // //       console.log("Error al enviar datos");
   //       showNotification("Error al guardar producto", "error");
   //     }
   //   } catch (error) {
-  //     console.log(error);
+  // //     console.log(error);
   //     showNotification("Error al guardar producto", "error");
   //   }
   // };

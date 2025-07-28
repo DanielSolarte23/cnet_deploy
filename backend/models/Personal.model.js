@@ -66,6 +66,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
+    firma_path:DataTypes.STRING
   });
 
   Personal.associate = (models) => {
