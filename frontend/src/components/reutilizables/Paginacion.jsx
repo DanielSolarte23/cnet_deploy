@@ -9,8 +9,8 @@ function Paginacion({ currentPage, totalPages, paginate, getPageNumbers }) {
           disabled={currentPage === 1}
           className={`flex gap-2 border items-center justify-center px-4 py-1 rounded-md ${
             currentPage === 1
-              ? "text-gray-800 bg-slate-900 cursor-not-allowed"
-              : "text-gray-500 bg-slate-950 hover:bg-slate-950 hover:text-white transition-colors duration-400"
+              ? "text-gray-800  dark:bg-slate-900 cursor-not-allowed"
+              : "text-gray-500  dark:bg-slate-950 hover:border-yellow-600 dark:hover:bg-slate-950 hover:text-yellow-500 transition-colors duration-400"
           }`}
         >
           <i className="fa-solid fa-arrow-left"></i>
@@ -25,10 +25,10 @@ function Paginacion({ currentPage, totalPages, paginate, getPageNumbers }) {
               onClick={() => (number !== "..." ? paginate(number) : null)}
               className={`hidden sm:block px-4 py-1 rounded-md ${
                 number === currentPage
-                  ? "bg-yellow-500 text-slate-950 font-semibold cursor-default"
+                  ? "bg-yellow-500 dark:text-slate-950 font-semibold cursor-default"
                   : number === "..."
                   ? "text-gray-500 cursor-default"
-                  : "text-gray-500 bg-slate-950 hover:bg-slate-900 hover:text-yellow-500 border transition-colors duration-300"
+                  : "text-gray-500 dark:bg-slate-950 dark:hover:bg-slate-900 hover:text-yellow-500 border transition-colors duration-300"
               }`}
             >
               {number}
@@ -40,8 +40,8 @@ function Paginacion({ currentPage, totalPages, paginate, getPageNumbers }) {
           disabled={currentPage === totalPages}
           className={`flex gap-2 border items-center justify-center px-4 py-1 rounded-md ${
             currentPage === totalPages
-              ? "text-gray-800 bg-slate-900 cursor-not-allowed"
-              : "text-gray-500 bg-slate-950 hover:bg-slate-950 hover:text-white transition-colors duration-400"
+              ? "text-gray-800  dark:bg-slate-900 cursor-not-allowed"
+              : "text-gray-500  dark:bg-slate-950 hover:border-yellow-600 dark:hover:bg-slate-950 hover:text-yellow-500 transition-colors duration-400"
           }`}
         >
           <span>Siguente</span>

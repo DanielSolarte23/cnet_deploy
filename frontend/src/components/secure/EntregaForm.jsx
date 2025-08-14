@@ -111,7 +111,7 @@ export default function FormularioEntrega({
 
   // Filtrar productos basado en la búsqueda
   const productosFiltrados = productos.filter((producto) =>
-    `${producto.descripcion} ${producto.modelo}`
+    `${producto.codigo} ${producto.descripcion} ${producto.modelo}`
       .toLowerCase()
       .includes(busquedaProducto.toLowerCase())
   );
@@ -188,7 +188,7 @@ export default function FormularioEntrega({
       unidadesSeriadas: [],
     });
     setProductoSeleccionadoInfo(producto);
-    setBusquedaProducto(`${producto.descripcion} - ${producto.modelo}`);
+    setBusquedaProducto(`${producto.codigo}: ${producto.descripcion} - ${producto.modelo}`);
     setMostrarListaProductos(false);
   };
 
@@ -627,7 +627,7 @@ export default function FormularioEntrega({
                           className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer border-b border-gray-100 dark:border-slate-600 last:border-b-0"
                         >
                           <div className="font-medium text-gray-900 dark:text-slate-200">
-                            {producto.descripcion} - {producto.modelo}
+                            {producto.codigo} {producto.descripcion} - {producto.modelo}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-slate-400">
                             Stock: {producto.stock}

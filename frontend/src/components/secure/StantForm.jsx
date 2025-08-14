@@ -133,14 +133,14 @@ export default function StantForm({
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/70 p-4 z-50">
       <div className="max-w-4xl mx-auto max-h-[90%] overflow-y-auto">
-        <div className="bg-slate-950 shadow-xl overflow-hidden rounded-lg border border-slate-700">
+        <div className="dark:bg-slate-950 bg-white shadow-xl overflow-hidden rounded-lg border border-slate-700">
           {/* Header */}
           <div className="border-b border-slate-700 px-8 py-6 flex justify-between items-center">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-white">
+              <h1 className="text-2xl md:text-3xl font-bold dark:text-white text-slate-700">
                 {isEditing ? "Editar Stant" : "Registrar Stant"}
               </h1>
-              <p className="text-slate-400 mt-2">
+              <p className="dark:text-slate-400 text-slate-600 mt-2">
                 {isEditing
                   ? "Actualiza la información del stant"
                   : "Complete todos los campos requeridos"}
@@ -149,7 +149,7 @@ export default function StantForm({
 
             <button
               onClick={handleClose}
-              className="text-slate-400 hover:text-white transition-colors p-2"
+              className="dark:text-slate-400 text-slate-600  hover:text-slate-800 dark:hover:text-white transition-colors p-2"
             >
               <X className="w-6 h-6" />
             </button>
@@ -160,7 +160,7 @@ export default function StantForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Nombre */}
               <div className="space-y-2 md:col-span-2">
-                <label className="flex items-center text-sm font-medium text-slate-300">
+                <label className="flex items-center text-sm font-medium text-slate-700 dark:text-slate-300">
                   <Box className="w-4 h-4 mr-2 text-yellow-500" />
                   Nombre *
                 </label>
@@ -169,8 +169,8 @@ export default function StantForm({
                   name="nombre"
                   value={formData.nombre}
                   onChange={handleInputChange} // Aquí se usa la función corregida
-                  className={`w-full px-4 py-3 bg-slate-900 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all text-white ${
-                    errors.nombre ? "border-red-500" : "border-slate-600"
+                  className={`w-full px-4 py-3 dark:bg-slate-900 border rounded-lg focus:ring-0 focus:border-yellow-500 transition-all dark:text-white text-slate-700 ${
+                    errors.nombre ? "border-red-500" : "border-slate-400"
                   }`}
                   placeholder="Ingrese el nombre del stant"
                 />
@@ -185,7 +185,7 @@ export default function StantForm({
               <button
                 type="submit"
                 disabled={isSubmitting || loading}
-                className="flex-1 bg-gradient-to-r from-yellow-600 to-yellow-500 text-slate-950 px-6 py-3 rounded-lg hover:from-yellow-500 hover:to-yellow-400 focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                className="flex-1 bg-yellow-500 text-slate-950 px-6 py-3 rounded-lg hover:bg-yellow-400 focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
                 {isSubmitting || loading
                   ? "Procesando..."

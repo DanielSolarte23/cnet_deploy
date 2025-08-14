@@ -117,7 +117,7 @@ export default function UsuariosTabla() {
     return productos.filter((producto) => {
       if (!producto) return false;
 
-      return safeToLowerCase(producto.descripcion).includes(lowercaseQuery);
+      return safeToLowerCase(producto.descripcion).includes(lowercaseQuery) || safeToLowerCase(producto.codigo).includes(lowercaseQuery); 
       // || safeToLowerCase(producto.Subcategorium.nombre).includes(lowercaseQuery)
     });
   }, [searchQuery, productos]);
@@ -202,13 +202,13 @@ export default function UsuariosTabla() {
 
   // Componente para mostrar estado vacío
   const EmptyState = ({ hasSearch = false }) => (
-    <div className="flex flex-col items-center justify-center py-14 px-4">
+    <div className="flex flex-col items-center justify-center py-10 px-4 ">
       <div className="text-center">
         {/* Icono */}
-        <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-slate-800 mb-4">
+        <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-white dark:bg-slate-800 mb-4">
           {hasSearch ? (
             <svg
-              className="h-8 w-8 text-slate-400"
+              className="h-8 w-8 dark:text-slate-400 text-slate-700"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -222,7 +222,7 @@ export default function UsuariosTabla() {
             </svg>
           ) : (
             <svg
-              className="h-8 w-8 text-slate-400"
+              className="h-8 w-8 dark:text-slate-400 text-slate-700"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -238,12 +238,12 @@ export default function UsuariosTabla() {
         </div>
 
         {/* Título y descripción */}
-        <h3 className="text-lg font-medium text-slate-200 mb-2">
+        <h3 className="text-lg font-medium dark:text-slate-200 text-slate-700 mb-2">
           {hasSearch
             ? "No se encontraron resultados"
             : "No hay productos registrados"}
         </h3>
-        <p className="text-sm text-slate-400 mb-6 max-w-sm">
+        <p className="text-sm dark:text-slate-400 text-slate-500 mb-6 max-w-sm">
           {hasSearch
             ? `No encontramos productos que coincidan con "${searchQuery}". Intenta con otros términos de búsqueda.`
             : "Aún no tienes productos registrados en este stand. Comienza agregando tu primer producto."}
@@ -284,7 +284,7 @@ export default function UsuariosTabla() {
   }
 
   return (
-    <div className="relative flex flex-col bg-slate-950 h-full border border-slate-700 rounded-lg ">
+    <div className="relative flex flex-col dark:bg-slate-950 h-full border border-slate-300 dark:border-slate-700 rounded-lg ">
       {notification.isVisible && (
         <NotificationModal
           message={notification.message}
@@ -294,7 +294,7 @@ export default function UsuariosTabla() {
         />
       )}
 
-      <nav className="bg-slate-900 border-b border-b-slate-700 flex flex-col md:flex-row items-center justify-between py-3 px-4 gap-3 h-auto md:h-[12%] xl-plus:h-1/10">
+      <nav className="dark:bg-slate-900 border-b dark:border-b-slate-700 border-b-slate-400 flex flex-col md:flex-row items-center justify-between py-3 px-4 gap-3 h-auto md:h-[12%] xl-plus:h-1/10 rounded-t-lg">
         <div className="relative w-full md:w-1/3 flex items-center">
           <i className="fa-solid left-3 text-zinc-400 absolute fa-magnifying-glass"></i>
           <input
@@ -302,7 +302,7 @@ export default function UsuariosTabla() {
             placeholder="Buscar..."
             value={searchQuery}
             onChange={handleSearchChange}
-            className="px-3 pl-10 py-2 border bg-slate-950 border-slate-700 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-slate-500"
+            className="px-3 pl-10 py-2 border dark:bg-slate-950 border-slate-700 rounded-md w-full focus:outline-none focus:ring-0 focus:border-yellow-500 placeholder:text-slate-700 text-slate-700 dark:placeholder:text-slate-300 dark:text-slate-300"
           />
         </div>
         <div className="flex items-center gap-2 w-full md:w-auto">
@@ -322,60 +322,60 @@ export default function UsuariosTabla() {
         </div>
       </nav>
 
-      <div className="overflow-x-auto h-[76%] xl-plus:h-8/10 w-full p-6 xl-plus:p-10">
+      <div className="overflow-x-auto h-[76%] xl-plus:h-8/10 w-full p-5 xl-plus:p-10 ">
         {/* Mostrar estado vacío si no hay datos */}
         {filterProductos.length === 0 ? (
           <EmptyState hasSearch={searchQuery.length > 0} />
         ) : (
           <>
             {/* Vista de tabla para pantallas medianas y grandes */}
-            <div className="hidden md:block overflow-hidden rounded-lg border border-slate-700">
+            <div className="hidden md:block overflow-hidden rounded-lg border dark:border-slate-700">
               <table className="text-sm text-left text-gray-500 w-full">
                 {/* Encabezado de tabla - mantener igual */}
-                <thead className="text-xs text-gray-400 uppercase bg-slate-900 border-b border-slate-500">
+                <thead className="text-xs dark:text-gray-400 text-gray-700 uppercase dark:bg-slate-900 bg-zinc-300 border-b border-slate-500">
                   <tr>
-                    <th className="px-2 py-3 md:px-6 md:py-4">Nombre</th>
-                    <th className="px-2 py-3 md:px-6 md:py-4">Modelo</th>
-                    <th className="px-2 py-3 md:px-6 md:py-4">Marca</th>
-                    <th className="px-2 py-3 md:px-6 md:py-4">Categoria</th>
-                    <th className="px-2 py-3 md:px-6 md:py-4">SubCategoria</th>
-                    <th className="px-2 py-3 md:px-6 md:py-4">Stock</th>
-                    <th className="px-2 py-3 md:px-6 md:py-4">Ajustar Stock</th>
+                    <th className="px-2 py-3 md:px-3 md:py-4">Codigo</th>
+                    <th className="px-1 py-3 md:px-1 md:py-4">Nombre</th>
+                    <th className="px-2 py-3 md:px-1 md:py-4">Modelo</th>
+                    <th className="px-2 py-3 md:px-1 md:py-4">Marca</th>
+                    <th className="px-2 py-3 md:px-1 md:py-4">SubCategoria</th>
+                    <th className="px-2 py-3 md:px-1 md:py-4 text-center">Stock</th>
+                    <th className="px-2 py-3 md:px-1 md:py-4 text-center">Ajustar Stock</th>
                   </tr>
                 </thead>
 
                 {/* Cuerpo */}
-                <tbody className=" divide-y divide-slate-700">
+                <tbody className=" divide-y dark:divide-slate-700 divide-slate-500">
                   {currentItems.map((producto) => (
                     <tr
-                      className=" border-b border-slate-700"
+                      className=" border-b dark:border-slate-700 border-slate-500"
                       key={producto.id}
                     >
-                      <td className="px-2 py-2 md:px-6 md:py-4 whitespace-nowrap">
-                        {producto.descripcion || "-"}
-                      </td>
-                      <td className="px-2 py-2 md:px-6 md:py-4 whitespace-nowrap">
-                        {producto.modelo || "-"}
-                      </td>
-                      <td className="px-2 py-2 md:px-6 md:py-4 whitespace-nowrap">
-                        {producto.marca || "-"}
-                      </td>
-                      <td className="px-2 py-2 md:px-6 md:py-4 whitespace-nowrap">
-                        {producto.Subcategorium?.Categorium?.nombre ||
-                          producto.Categorium?.nombre ||
+                      <td className="px-2 py-2 md:px-3 md:py-4 whitespace-nowrap">
+                        {producto.codigo ||
                           "-"}
                       </td>
-                      <td className="px-2 py-2 md:px-6 md:py-4 whitespace-nowrap">
+                      <td className="px-1 py-2 md:px-1 md:py-4 whitespace-nowrap">
+                        {producto.descripcion || "-"}
+                      </td>
+                      <td className="px-2 py-2 md:px-1 md:py-4 whitespace-nowrap">
+                        {producto.modelo || "-"}
+                      </td>
+                      <td className="px-2 py-2 md:px-1 md:py-4 whitespace-nowrap">
+                        {producto.marca || "-"}
+                      </td>
+
+                      <td className="px-2 py-2 md:px-1 md:py-4 whitespace-nowrap">
                         {producto.Subcategorium?.nombre || ""}
                       </td>
-                      <td className="px-2 py-2 md:px-6 md:py-4">
+                      <td className="px-2 py-2 md:px-1 md:py-4 text-center">
                         {producto.stock || "0"}
                       </td>
-                      <td className="px-2 py-1 ">
+                      <td className="px-1 py-1 text-center">
                         <button
                           onClick={() => openModalStock(producto)}
-                          className="font-bold py-1 px-3 rounded"
-                          aria-label="Editar Usuario"
+                          className="font-bold py-1 px-3 rounded inline-block"
+                          aria-label="Editar stock"
                         >
                           <i className="fa-solid fa-repeat"></i>
                         </button>
@@ -391,51 +391,51 @@ export default function UsuariosTabla() {
               {currentItems.map((producto) => (
                 <div
                   key={producto.id}
-                  className="bg-slate-950 p-4 rounded-lg border border-slate-700 shadow-sm"
+                  className="dark:bg-slate-950 p-4 rounded-lg border dark:border-slate-700 shadow-sm"
                 >
                   <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-medium">
+                    <h3 className="font-medium text-slate-700 dark:text-slate-200">
                       {producto.descripcion || ""}
                     </h3>
                     <button
                       onClick={() => openModalStock(producto)}
-                      className="bg-slate-900 hover:bg-gray-200 p-2 rounded-full"
+                      className="dark:bg-slate-900 border dark:border-0 border-bg-slate-500 hover:bg-gray-200 p-2 rounded-full"
                       aria-label="Ajustar Stock"
                     >
-                      <i className="fa-solid fa-repeat"></i>
+                      <i className="fa-solid fa-repeat text-slate-700 dark:text-slate-200"></i>
                     </button>
                   </div>
 
                   <div className="space-y-2 text-sm">
                     <div className="grid grid-cols-3">
-                      <span className="font-medium text-slate-300">
+                      <span className="font-medium dark:text-slate-300 text-slate-700">
                         Modelo:
                       </span>
-                      <span className="col-span-2 text-slate-400">
+                      <span className="col-span-2 dark:text-slate-400 text-slate-600">
                         {producto.modelo || "-"}
                       </span>
                     </div>
                     <div className="grid grid-cols-3">
-                      <span className="font-medium text-slate-300">
+                      <span className="font-medium dark:text-slate-300 text-slate-700">
                         Categoría:
                       </span>
-                      <span className="col-span-2 text-slate-400">
+                      <span className="col-span-2 dark:text-slate-400 text-slate-600">
                         {producto.Subcategorium?.Categorium?.nombre ||
                           producto.Categorium?.nombre ||
                           "-"}
                       </span>
                     </div>
                     <div className="grid grid-cols-3">
-                      <span className="font-medium text-slate-300">
+                      <span className="font-medium dark:text-slate-300 text-slate-700">
                         SubCategoría:
                       </span>
-                      <span className="col-span-2 text-slate-400">
+                      <span className="col-span-2 dark:text-slate-400 text-slate-600">
                         {producto.Subcategorium?.nombre || "-"}
                       </span>
                     </div>
                     <div className="grid grid-cols-3">
-                      <span className="font-medium text-slate-300">Stock:</span>
-                      <span className="col-span-2 text-slate-400">
+                      <span className="font-medium dark:text-slate-300 text-slate-700">Stock:</span>
+                      <span className="col-span-2 dark:text-slate-400 text-slate-600">
                         {producto.stock || "0"}
                       </span>
                     </div>
@@ -449,7 +449,7 @@ export default function UsuariosTabla() {
 
       {/* Solo mostrar paginación si hay datos */}
       {filterProductos.length > 0 && (
-        <div className="bg-slate-900 border-t border-t-slate-700 rounded-b-md h-auto py-4 md:h-[12%] xl-plus:h-1/10 flex flex-col md:flex-row items-center justify-center p-2 gap-4 px-4">
+        <div className="dark:bg-slate-900 border-t dark:border-t-slate-700 border-t-slate-400 rounded-b-md h-auto py-4 md:h-[12%] xl-plus:h-1/10 flex flex-col md:flex-row items-center justify-center p-2 gap-4 px-4">
           <Paginacion
             currentPage={currentPage}
             totalPages={totalPages}

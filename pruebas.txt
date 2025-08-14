@@ -352,3 +352,15 @@ http://localhost:3004/api/productos/2/stock
     }
   }
 }
+
+Busquedas de productos asignados
+http://172.16.110.74:3004/api/productos-asignados/buscar?busqueda=####&tipo=serial
+http://172.16.110.74:3004/api/productos-asignados/buscar?busqueda=####&tipo=descripcion
+http://172.16.110.74:3004/api/productos-asignados/buscar?busqueda=mouse&estado=pendiente
+
+busqueda de entrega rapida de entregas
+GET /productos-asignados/busqueda-rapida?q=ABC
+
+busqueda rapida de productos
+http://172.16.110.74:3004/api/productos/busqueda-rapida?q=PRD-0082
+   

@@ -13,8 +13,8 @@ function page() {
   }, []);
 
   return (
-    <div className="h-full w-full rounded-lg bg-slate-950">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 grid-rows">
+    <div className="h-full w-full rounded-lg bg-white dark:bg-slate-950">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 grid-rows pb-4">
         {productos.map((producto) => (
           <TarjetaProductoVelocimetro key={producto.id} producto={producto} />
         ))}

@@ -123,9 +123,9 @@ export default function AdministradorLayout({ children }) {
                 <CategoriaProvider>
                   <EntregaProvider>
                     <PersonalProvider>
-                      <div className="bg-slate-900 w-full h-[calc(100%-6rem)]">
-                        <div className="bg-slate-950 w-full h-full rounded-tl-xl p-3 border-l border-t border-slate-700">
-                          <div className="w-full rounded-lg bg-slate-900 h-full">
+                      <div className="dark:bg-slate-900 w-full h-[calc(100%-6rem)]">
+                        <div className="dark:bg-slate-950 w-full h-full rounded-tl-xl p-3 border-l border-t dark:border-slate-700">
+                          <div className="w-full rounded-lg dark:bg-slate-900 h-full">
                             {children}
                           </div>
                         </div>

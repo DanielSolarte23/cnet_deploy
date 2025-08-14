@@ -310,14 +310,14 @@ export default function FormularioMultipaso({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/70 p-4 z-50">
-      <div className="w-full max-w-4xl max-h-[90%] overflow-y-auto mx-auto bg-slate-950 border border-slate-700 p-6 rounded-lg shadow-md">
+      <div className="w-full max-w-4xl max-h-[90%] overflow-y-auto mx-auto bg-white dark:bg-slate-900 border border-slate-700 p-6 rounded-lg shadow-md">
         <i
           onClick={() => {
             handleCloseModal();
           }}
-          className="fa-solid fa-x"
+          className="fa-solid fa-x dark:text-slate-200 text-slate-700"
         ></i>
-        <h1 className="text-2xl font-bold text-center mb-6">
+        <h1 className="text-2xl font-bold text-center mb-6 dark:text-slate-200 text-slate-700">
           Crear Nuevo Producto
         </h1>
 
@@ -328,17 +328,17 @@ export default function FormularioMultipaso({
           >
             <div
               className={`w-8 h-8 rounded-full mx-auto flex items-center justify-center ${
-                paso >= 1 ? "bg-yellow-500 text-slate-900" : "bg-gray-200"
+                paso >= 1 ? "bg-yellow-500 text-slate-900" : "dark:bg-slate-200 bg-slate-700"
               }`}
             >
               1
             </div>
-            <p className="mt-1">Categoría</p>
+            <p className="mt-1 dark:text-slate-200 text-slate-700">Categoría</p>
           </div>
-          <div className="w-full flex-1 flex items-center">
+          <div className="w-full flex-1  flex items-center">
             <div
-              className={`h-1 w-full ${
-                paso > 1 ? "bg-yellow-500" : "bg-gray-200"
+              className={`h-[0.15rem] w-full ${
+                paso > 1 ? "bg-yellow-500" : "dark:bg-slate-200 bg-slate-700"
               }`}
             ></div>
           </div>
@@ -347,17 +347,17 @@ export default function FormularioMultipaso({
           >
             <div
               className={`w-8 h-8 rounded-full mx-auto flex items-center justify-center ${
-                paso >= 2 ? "bg-yellow-500 text-slate-900" : "bg-gray-200"
+                paso >= 2 ? "bg-yellow-500 text-slate-900" : "dark:bg-slate-200 bg-slate-700 dark:text-slate-700"
               }`}
             >
               2
             </div>
-            <p className="mt-1">Producto</p>
+            <p className="mt-1 dark:text-slate-200 text-slate-700">Producto</p>
           </div>
           <div className="w-full flex-1 flex items-center">
             <div
-              className={`h-1 w-full ${
-                paso > 2 ? "bg-yellow-500" : "bg-gray-200"
+              className={`h-[0.15rem] w-full ${
+                paso > 2 ? "bg-yellow-500" : "dark:bg-slate-200 bg-slate-700"
               }`}
             ></div>
           </div>
@@ -366,17 +366,17 @@ export default function FormularioMultipaso({
           >
             <div
               className={`w-8 h-8 rounded-full mx-auto flex items-center justify-center ${
-                paso >= 3 ? "bg-yellow-500 text-slate-900" : "bg-gray-200"
+                paso >= 3 ? "bg-yellow-500 text-slate-900" : "dark:bg-slate-200 bg-slate-700 dark:text-slate-700"
               }`}
             >
               3
             </div>
-            <p className="mt-1">Seriales</p>
+            <p className="mt-1 dark:text-slate-200 text-slate-700">Seriales</p>
           </div>
           <div className="w-full flex-1 flex items-center">
             <div
-              className={`h-1 w-full ${
-                paso > 3 ? "bg-yellow-500" : "bg-gray-200"
+              className={`h-[0.15rem] w-full ${
+                paso > 3 ? "bg-yellow-500" : "dark:bg-slate-200 bg-slate-700"
               }`}
             ></div>
           </div>
@@ -385,12 +385,12 @@ export default function FormularioMultipaso({
           >
             <div
               className={`w-8 h-8 rounded-full mx-auto flex items-center justify-center ${
-                paso >= 4 ? "bg-yellow-500 text-slate-900" : "bg-gray-200"
+                paso >= 4 ? "bg-yellow-500 text-slate-900" : "dark:bg-slate-200 bg-slate-700 dark:text-slate-700"
               }`}
             >
               4
             </div>
-            <p className="mt-1">Confirmar</p>
+            <p className="mt-1 dark:text-slate-200 text-slate-700">Confirmar</p>
           </div>
         </div>
 
@@ -398,17 +398,17 @@ export default function FormularioMultipaso({
           {/* Paso 1: Selección de Categoría y Subcategoría */}
           {paso === 1 && (
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold mb-4">
+              <h2 className="text-xl font-semibold mb-4 dark:text-slate-200 text-slate-700">
                 Seleccione la Categoría y Subcategoría
               </h2>
 
               {!nuevaCategoria ? (
                 <>
                   <div className="mb-4">
-                    <label className="block mb-2 font-medium">Categoría:</label>
+                    <label className="block mb-2 font-medium dark:text-slate-200 text-slate-700">Categoría:</label>
                     <div className="flex gap-4">
                       <select
-                        className="w-full p-2 bg-slate-900 border rounded focus:ring-2 focus:ring-slate-500"
+                        className="w-full p-2 dark:bg-slate-900 border rounded focus:ring-0 focus:ring-slate-500 dark:text-slate-200 text-slate-700"
                         value={formData.subcategoria.CategoriumId}
                         onChange={handleCategoriaChange}
                       >
@@ -438,7 +438,7 @@ export default function FormularioMultipaso({
                           </label>
                           <div className="flex gap-4">
                             <select
-                              className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-500 bg-slate-900"
+                              className="w-full p-2 border rounded focus:ring focus:ring-slate-500 dark:bg-slate-900 dark:text-slate-200 text-slate-700"
                               value={formData.SubcategoriumId}
                               onChange={handleSubcategoriaChange}
                             >
@@ -462,13 +462,13 @@ export default function FormularioMultipaso({
                         </>
                       ) : (
                         <>
-                          <label className="block mb-2 font-medium">
+                          <label className="block mb-2 font-medium dark:text-slate-200 text-slate-700">
                             Nueva Subcategoría:
                           </label>
                           <div className="flex gap-4">
                             <input
                               type="text"
-                              className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-500"
+                              className="w-full p-2 border rounded outline-none dark:text-slate-200 text-slate-700 placeholder:dark:text-slate-500 placeholder:text-slate-400 focus:border-slate-500"
                               placeholder="Nombre de la subcategoría"
                               name="subcategoria.nombre"
                               value={formData.subcategoria.nombre}
@@ -490,13 +490,13 @@ export default function FormularioMultipaso({
               ) : (
                 <>
                   <div className="mb-4">
-                    <label className="block mb-2 font-medium">
+                    <label className="block mb-2 font-medium dark:text-slate-200 text-slate-700">
                       Nueva Categoría:
                     </label>
                     <div className="flex gap-4">
                       <input
                         type="text"
-                        className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-500"
+                        className="w-full p-2 border rounded outline-none dark:text-slate-200 text-slate-700 placeholder:dark:text-slate-500 placeholder:text-slate-400 focus:border-slate-500"
                         placeholder="Nombre de la categoría"
                         name="categoria.nombre"
                         value={formData.categoria.nombre}
@@ -513,12 +513,12 @@ export default function FormularioMultipaso({
                   </div>
 
                   <div className="mb-4">
-                    <label className="block mb-2 font-medium">
+                    <label className="block mb-2 font-medium dark:text-slate-200 text-slate-700">
                       Nueva Subcategoría:
                     </label>
                     <input
                       type="text"
-                      className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-500"
+                      className="w-full p-2 border rounded outline-none dark:text-slate-200 text-slate-700 placeholder:dark:text-slate-500 placeholder:text-slate-400 focus:border-slate-500"
                       placeholder="Nombre de la subcategoría"
                       name="subcategoria.nombre"
                       value={formData.subcategoria.nombre}
@@ -533,7 +533,7 @@ export default function FormularioMultipaso({
           {/* Paso 2: Datos del Producto */}
           {paso === 2 && (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold mb-4">
+              <h2 className="text-xl font-semibold mb-4 dark:text-slate-200 text-slate-700">
                 Ingrese los Datos del Producto
               </h2>
 
@@ -569,10 +569,10 @@ export default function FormularioMultipaso({
                 </div> */}
 
                 <div className="col-span-2">
-                  <label className="block mb-1 font-medium">Nombre del producto:</label>
+                  <label className="block mb-1 font-medium dark:text-slate-200 text-slate-700">Nombre del producto:</label>
                   <input
                     type="text"
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-900"
+                    className="w-full p-2 border rounded outline-none dark:text-slate-200 text-slate-700 placeholder:dark:text-slate-500 placeholder:text-slate-400 focus:border-slate-500"
                     name="descripcion"
                     value={formData.descripcion}
                     onChange={handleChange}
@@ -581,10 +581,10 @@ export default function FormularioMultipaso({
                 </div>
 
                 <div>
-                  <label className="block mb-1 font-medium">Marca:</label>
+                  <label className="block mb-1 font-medium dark:text-slate-200 text-slate-700">Marca:</label>
                   <input
                     type="text"
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-900"
+                    className="w-full p-2 border rounded outline-none dark:text-slate-200 text-slate-700 placeholder:dark:text-slate-500 placeholder:text-slate-400 focus:border-slate-500"
                     name="marca"
                     value={formData.marca}
                     onChange={handleChange}
@@ -593,10 +593,10 @@ export default function FormularioMultipaso({
                 </div>
 
                 <div>
-                  <label className="block mb-1 font-medium">Modelo:</label>
+                  <label className="block mb-1 font-medium dark:text-slate-200 text-slate-700">Modelo:</label>
                   <input
                     type="text"
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-900"
+                    className="w-full p-2 border rounded outline-none dark:text-slate-200 text-slate-700 placeholder:dark:text-slate-500 placeholder:text-slate-400 focus:border-slate-500"
                     name="modelo"
                     value={formData.modelo}
                     onChange={handleChange}
@@ -605,10 +605,10 @@ export default function FormularioMultipaso({
                 </div>
 
                 <div>
-                  <label className="block mb-1 font-medium">Color:</label>
+                  <label className="block mb-1 font-medium dark:text-slate-200 text-slate-700">Color:</label>
                   <input
                     type="text"
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-900"
+                    className="w-full p-2 border rounded outline-none dark:text-slate-200 text-slate-700 placeholder:dark:text-slate-500 placeholder:text-slate-400 focus:border-slate-500"
                     name="color"
                     value={formData.color}
                     onChange={handleChange}
@@ -616,11 +616,11 @@ export default function FormularioMultipaso({
                 </div>
 
                 <div>
-                  <label className="block mb-1 font-medium">
+                  <label className="block mb-1 font-medium dark:text-slate-200 text-slate-700">
                     Unidad de Medida:
                   </label>
                   <select
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-900 bg-slate-950"
+                    className="w-full p-2 border rounded foutline-none dark:text-slate-200 text-slate-700  focus:border-slate-500 dark:bg-slate-900"
                     name="unidadMedida"
                     value={formData.unidadMedida}
                     onChange={handleChange}
@@ -633,12 +633,12 @@ export default function FormularioMultipaso({
                 </div>
 
                 <div>
-                  <label className="block mb-1 font-medium">
+                  <label className="block mb-1 font-medium dark:text-slate-200 text-slate-700">
                     Stock Mínimo:
                   </label>
                   <input
                     type="number"
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-900"
+                    className="w-full p-2 border rounded outline-none dark:text-slate-200 text-slate-700 placeholder:dark:text-slate-500 placeholder:text-slate-400 focus:border-slate-500"
                     name="stockMinimo"
                     value={formData.stockMinimo}
                     onChange={handleChange}
@@ -647,9 +647,9 @@ export default function FormularioMultipaso({
                 </div>
 
                 <div>
-                  <label className="block mb-1 font-medium">Estado:</label>
+                  <label className="block mb-1 font-medium dark:text-slate-200 text-slate-700">Estado:</label>
                   <select
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-900 bg-slate-950"
+                    className="w-full p-2 border rounded outline-none dark:text-slate-200 text-slate-700  focus:border-slate-500 dark:bg-slate-900"
                     name="estado"
                     value={formData.estado}
                     onChange={handleChange}
@@ -661,7 +661,7 @@ export default function FormularioMultipaso({
                 </div>
 
                 <div className="col-span-2">
-                  <label className="block mb-1 font-medium">
+                  <label className="block mb-1 font-medium dark:text-slate-200 text-slate-700">
                     ¿El producto tiene seriales únicos?
                   </label>
                   <div className="flex gap-4 mt-2">
@@ -671,7 +671,7 @@ export default function FormularioMultipaso({
                         checked={tieneSeriales}
                         onChange={() => setTieneSeriales(true)}
                       />
-                      <span>Sí, registrar seriales</span>
+                      <span className="dark:text-slate-200 text-slate-700">Sí, registrar seriales</span>
                     </label>
                     <label className="flex items-center gap-2">
                       <input
@@ -679,19 +679,19 @@ export default function FormularioMultipaso({
                         checked={!tieneSeriales}
                         onChange={() => setTieneSeriales(false)}
                       />
-                      <span>No, manejar stock manualmente</span>
+                      <span className="dark:text-slate-200 text-slate-700">No, manejar stock manualmente</span>
                     </label>
                   </div>
                 </div>
 
                 {!tieneSeriales && (
                   <div>
-                    <label className="block mb-1 font-medium">
+                    <label className="block mb-1 font-medium dark:text-slate-200 text-slate-700">
                       Stock Inicial:
                     </label>
                     <input
                       type="number"
-                      className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-900"
+                      className="w-full p-2 border rounded outline-none dark:text-slate-200 text-slate-700 placeholder:dark:text-slate-500 placeholder:text-slate-400 focus:border-slate-500"
                       name="stock"
                       value={formData.stock}
                       onChange={handleChange}
@@ -701,9 +701,9 @@ export default function FormularioMultipaso({
                 )}
 
                 <div className="col-span-2">
-                  <label className="block mb-1 font-medium">Notas:</label>
+                  <label className="block mb-1 font-medium dark:text-slate-200 text-slate-700">Notas:</label>
                   <textarea
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-900"
+                    className="w-full p-2 border rounded outline-none dark:text-slate-200 text-slate-700 placeholder:dark:text-slate-500 placeholder:text-slate-400 focus:border-slate-500"
                     name="notas"
                     value={formData.notas}
                     onChange={handleChange}
@@ -717,13 +717,13 @@ export default function FormularioMultipaso({
           {/* Paso 3: Seriales */}
           {paso === 3 && (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold mb-4">
+              <h2 className="text-xl font-semibold mb-4 dark:text-slate-200 text-slate-700">
                 {tieneSeriales ? "Registrar Seriales" : "Sin Seriales"}
               </h2>
 
               {tieneSeriales ? (
                 <>
-                  <p className="mb-4">
+                  <p className="mb-4 dark:text-slate-200 text-slate-700">
                     Agregue los seriales únicos para cada unidad del producto.
                   </p>
 
@@ -732,7 +732,7 @@ export default function FormularioMultipaso({
                       <div className="flex-1">
                         <input
                           type="text"
-                          className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                          className="w-full p-2 border rounded outline-none dark:text-slate-200 text-slate-700 placeholder:dark:text-slate-500 placeholder:text-slate-400 focus:border-slate-500"
                           placeholder="Número de serial"
                           value={unidad.serial}
                           onChange={(e) =>
@@ -743,7 +743,7 @@ export default function FormularioMultipaso({
                       </div>
                       <div className="w-32">
                         <select
-                          className="w-full p-2 border rounded focus:ring-2 focus:ring-slate-900"
+                          className="w-full p-2 border rounded outline-none dark:text-slate-200 text-slate-700 dark:bg-slate-900 focus:border-slate-500"
                           value={unidad.estado}
                           onChange={(e) =>
                             handleUnidadChange(index, "estado", e.target.value)
@@ -778,12 +778,12 @@ export default function FormularioMultipaso({
                   </div>
                 </>
               ) : (
-                <div className="p-6 text-center bg-slate-950 rounded">
-                  <p>Este producto no requiere registro de seriales.</p>
-                  <p className="text-sm text-gray-600 mt-2">
+                <div className="p-6 text-center dark:bg-slate-950 rounded">
+                  <p className="dark:text-slate-200 text-slate-700 font-bold">Este producto no requiere registro de seriales.</p>
+                  <p className="text-sm dark:text-slate-100 text-slate-700 mt-2">
                     El stock se manejará manualmente.
                   </p>
-                  <p className="font-medium mt-4">
+                  <p className="font-medium mt-4 dark:text-slate-200 text-slate-700">
                     Stock inicial: {formData.stock}
                   </p>
                 </div>
@@ -794,22 +794,22 @@ export default function FormularioMultipaso({
           {/* Paso 4: Confirmación */}
           {paso === 4 && (
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold mb-4">
+              <h2 className="text-xl font-semibold mb-4 dark:text-slate-200 text-slate-700">
                 Confirmar Datos del Producto
               </h2>
 
-              <div className="bg-slate-950 p-6 rounded border border-blue-200">
+              <div className="dark:bg-slate-950 p-6 rounded border border-blue-200">
                 <div className="flex items-center gap-2 mb-4">
                   <AlertCircle size={20} className="text-yellow-500" />
-                  <span className="font-medium">
+                  <span className="font-medium dark:text-slate-200 text-slate-700">
                     Verifique la información antes de guardar
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                   <div>
-                    <p className="font-medium">Categoría:</p>
-                    <p>
+                    <p className="dark:text-slate-200 text-slate-700 font-bold">Categoría:</p>
+                    <p className="dark:text-slate-200 text-slate-700">
                       {nuevaCategoria
                         ? `${formData.categoria.nombre} (Nueva)`
                         : categorias.find(
@@ -819,8 +819,8 @@ export default function FormularioMultipaso({
                   </div>
 
                   <div>
-                    <p className="font-medium">Subcategoría:</p>
-                    <p>
+                    <p className="dark:text-slate-200 text-slate-700 font-bold ">Subcategoría:</p>
+                    <p className="dark:text-slate-200 text-slate-500 ">
                       {nuevaSubcategoria || nuevaCategoria
                         ? `${formData.subcategoria.nombre} (Nueva)`
                         : subcategorias.find(
@@ -835,41 +835,41 @@ export default function FormularioMultipaso({
                   </div> */}
 
                   <div>
-                    <p className="font-medium">Estante:</p>
-                    <p>
+                    <p className="dark:text-slate-200 text-slate-700 font-bold">Estante:</p>
+                    <p className="dark:text-slate-200 text-slate-500">
                       {stants.find((s) => s.id == formData.StantId)?.nombre ||
                         "-"}
                     </p>
                   </div>
 
                   <div className="col-span-2">
-                    <p className="font-medium">Descripción:</p>
-                    <p>{formData.descripcion}</p>
+                    <p className="dark:text-slate-200 text-slate-700 font-bold">Descripción:</p>
+                    <p className="dark:text-slate-200 text-slate-500">{formData.descripcion}</p>
                   </div>
 
                   <div>
-                    <p className="font-medium">Marca:</p>
-                    <p>{formData.marca}</p>
+                    <p className="dark:text-slate-200 text-slate-700 font-bold">Marca:</p>
+                    <p className="dark:text-slate-200 text-slate-500">{formData.marca}</p>
                   </div>
 
                   <div>
-                    <p className="font-medium">Modelo:</p>
-                    <p>{formData.modelo}</p>
+                    <p className="dark:text-slate-200 text-slate-700 font-bold">Modelo:</p>
+                    <p className="dark:text-slate-200 text-slate-500">{formData.modelo}</p>
                   </div>
 
                   <div>
-                    <p className="font-medium">Color:</p>
-                    <p>{formData.color}</p>
+                    <p className="dark:text-slate-200 text-slate-700 font-bold">Color:</p>
+                    <p className="dark:text-slate-200 text-slate-500">{formData.color}</p>
                   </div>
 
                   <div>
-                    <p className="font-medium">Stock Mínimo:</p>
-                    <p>{formData.stockMinimo}</p>
+                    <p className="dark:text-slate-200 text-slate-700 font-bold">Stock Mínimo:</p>
+                    <p className="dark:text-slate-200 text-slate-500">{formData.stockMinimo}</p>
                   </div>
 
                   <div>
-                    <p className="font-medium">Unidades con serial:</p>
-                    <p>
+                    <p className="dark:text-slate-200 text-slate-700 font-bold">Unidades con serial:</p>
+                    <p className="dark:text-slate-200 text-slate-500">
                       {tieneSeriales
                         ? `${unidades.length} unidades`
                         : "No aplica"}
@@ -877,13 +877,13 @@ export default function FormularioMultipaso({
                   </div>
 
                   <div>
-                    <p className="font-medium">Stock:</p>
-                    <p>{tieneSeriales ? unidades.length : formData.stock}</p>
+                    <p className="dark:text-slate-200 text-slate-700 font-bold">Stock:</p>
+                    <p className="dark:text-slate-200 text-slate-500">{tieneSeriales ? unidades.length : formData.stock}</p>
                   </div>
 
                   {tieneSeriales && unidades.length > 0 && (
                     <div className="col-span-2 mt-2">
-                      <p className="font-medium">Seriales:</p>
+                      <p className="dark:text-slate-200 text-slate-700 font-bold">Seriales:</p>
                       <ul className="ml-4 list-disc">
                         {unidades
                           .map((u, idx) => (
@@ -900,8 +900,8 @@ export default function FormularioMultipaso({
                   )}
 
                   <div className="col-span-2">
-                    <p className="font-medium">Notas:</p>
-                    <p>{formData.notas || "No hay notas adicionales"}</p>
+                    <p className="dark:text-slate-200 text-slate-700 font-bold">Notas:</p>
+                    <p className="dark:text-slate-200 text-slate-500">{formData.notas || "No hay notas adicionales"}</p>
                   </div>
                 </div>
               </div>
@@ -927,7 +927,7 @@ export default function FormularioMultipaso({
                   (paso === 1 && validarPaso1()) ||
                   (paso === 2 && validarPaso2()) ||
                   (paso === 3 && validarPaso3())
-                    ? "bg-blue-800 text-white"
+                    ? "bg-slate-900 text-white"
                     : "bg-gray-300 cursor-not-allowed"
                 }`}
                 onClick={avanzarPaso}

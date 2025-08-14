@@ -315,7 +315,7 @@ export const ReintegroModal = ({
     setError("");
 
     try {
-      // console.log("Datos a enviar:", JSON.stringify(dataToSend, null, 2));
+      console.log("Datos a enviar:", JSON.stringify(dataToSend, null, 2));
       await onSubmit(dataToSend);
       resetForm();
       onClose();

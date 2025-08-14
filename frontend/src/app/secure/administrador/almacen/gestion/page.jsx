@@ -12,7 +12,8 @@ import FormularioEntrega from "@/components/secure/EntregaForm";
 import html2pdf from "html2pdf.js";
 import ActaPDFAislada from "@/components/secure/ActaEntregaProductos";
 import axios from "axios";
-import { ReintegroModal } from "@/components/secure/almacenista/FormEntrega";
+import { ReintegroModal } from "@/components/secure/almacenista/FormReintegro";
+import { ModificarProductosModal } from "@/components/secure/almacenista/UpdateEntregaForm";
 
 export default function GestionPage() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -25,6 +26,7 @@ export default function GestionPage() {
   const [modalOpenReintegro, setModalOpenReintegro] = useState(false);
   const [entregaIdParaReintegro, setEntregaIdParaReintegro] = useState(null);
   const { getEntregas, entregas, loading, error } = useEntregas();
+  const [modalOpenUpdate, setModalOpenUpdate] = useState(false);
 
   useEffect(() => {
     getEntregas();
@@ -84,6 +86,19 @@ export default function GestionPage() {
     }
   };
 
+  //Actualizacion de entregfas
+  const openEditModal = (entregaId) => {
+    const entrega = entregas.find((e) => e.id === entregaId);
+    setEntregaSeleccionada(entrega);
+    setModalOpenUpdate(true);
+  };
+
+  const handleUpdate = (entregaActualizada) => {
+    console.log("Entrega actualizada:", entregaActualizada);
+    // Aquí actualizarías tu estado de entregas
+  };
+
+  //reintegros
   const abrirModalReintegro = (entregaId) => {
     setModalOpenReintegro(true);
     setEntregaIdParaReintegro(entregaId);
@@ -110,12 +125,32 @@ export default function GestionPage() {
     }
   };
 
+  //notificaciones
   const [notification, setNotification] = useState({
     message: "",
     isVisible: false,
     type: "success",
   });
 
+  // Función para mostrar notificaciones
+  const showNotification = (message, type = "success") => {
+    setNotification({
+      message,
+      isVisible: true,
+      type,
+    });
+    // Ocultar la notificación después de 5000ms
+    setTimeout(() => {
+      setNotification((prev) => ({ ...prev, isVisible: false }));
+    }, 3000);
+  };
+
+  // Función para cerrar notificación manualmente
+  const closeNotification = () => {
+    setNotification((prev) => ({ ...prev, isVisible: false }));
+  };
+
+  //responsive
   useEffect(() => {
     if (typeof window !== "undefined") {
       const updateItemsPerPage = () => {
@@ -139,46 +174,33 @@ export default function GestionPage() {
     }
   }, []);
 
-  // Función para mostrar notificaciones
-  const showNotification = (message, type = "success") => {
-    setNotification({
-      message,
-      isVisible: true,
-      type,
-    });
-    // Ocultar la notificación después de 5000ms
-    setTimeout(() => {
-      setNotification((prev) => ({ ...prev, isVisible: false }));
-    }, 3000);
-  };
-
-  // Función para cerrar notificación manualmente
-  const closeNotification = () => {
-    setNotification((prev) => ({ ...prev, isVisible: false }));
-  };
-
-  // Helper function to safely convert a value to lowercase
+  // Función helper mejorada para manejar valores seguros
   const safeToLowerCase = (value) => {
-    return value ? value.toLowerCase() : "";
+    // Convertir a string si no lo es, y luego a lowercase
+    if (value === null || value === undefined) return "";
+    return String(value).toLowerCase();
   };
 
-  const filterEntregas = useMemo(() => {
-    if (!searchQuery) return Array.isArray(entregas) ? entregas : [];
-    if (!entregas || !Array.isArray(entregas)) return [];
+const filterEntregas = useMemo(() => {
+  if (!searchQuery) return Array.isArray(entregas) ? entregas : [];
+  if (!entregas || !Array.isArray(entregas)) return [];
 
-    const lowercaseQuery = searchQuery.toLowerCase();
-    return entregas.filter((entrega) => {
-      if (!entrega) return false;
+  const lowercaseQuery = searchQuery.toLowerCase();
+  return entregas.filter((entrega) => {
+    if (!entrega) return false;
 
-      return (
-        safeToLowerCase(entrega.proyecto).includes(lowercaseQuery) ||
-        safeToLowerCase(entrega.tecnicoData?.nombre).includes(lowercaseQuery) ||
-        safeToLowerCase(entrega.almacenistaData?.nombre).includes(
-          lowercaseQuery
-        )
-      );
-    });
-  }, [searchQuery, entregas]);
+    // Obtener valores de forma segura
+    const proyecto = safeToLowerCase(entrega.proyecto);
+    const tecnicoNombre = safeToLowerCase(entrega.tecnicoData?.nombre);
+    const almacenistaNombre = safeToLowerCase(entrega.almacenistaData?.nombre);
+
+    return (
+      proyecto.includes(lowercaseQuery) ||
+      tecnicoNombre.includes(lowercaseQuery) ||
+      almacenistaNombre.includes(lowercaseQuery)
+    );
+  });
+}, [searchQuery, entregas]);
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -336,21 +358,26 @@ export default function GestionPage() {
             {/* Encabezado de tabla - mantener igual */}
             <thead className="text-xs text-gray-400 uppercase bg-slate-900 border-b border-slate-500">
               <tr>
-                <th className="px-4 py-3 md:px-6 md:py-4">Fecha de Entrega</th>
-                <th className="px-4 py-3 md:px-6 md:py-4 text-center">
+                <th className="px-2 py-3 md:px-2 md:py-4 pl-4">
+                  Fecha de Entrega
+                </th>
+                <th className="px-2 py-3 md:px-2 md:py-4 text-center ">
                   Proyecto
                 </th>
-                <th className="px-4 py-3 md:px-6 md:py-4 text-center">
+                <th className="px-2 py-3 md:px-2 md:py-4 text-center">
                   Entregado a
                 </th>
-                <th className="px-4 py-3 md:px-6 md:py-4 text-center">
+                <th className="px-4 py-3 md:px-2 md:py-4 text-center">
                   Estado
                 </th>
-                <th className="px-4 py-3 md:px-6 md:py-4 text-center">
-                  Cantidad Productos
+                <th className="px-2 py-3 md:px-2 md:py-4 text-center">
+                  Confirmado
                 </th>
-                <th className="px-4 py-3 md:px-6 md:py-4 text-center">Actas</th>
-                <th className="px-4 py-3 md:px-6 md:py-4 text-center">
+                <th className="px-2 py-3 md:px-2 md:py-4 text-center">
+                  Ajustar
+                </th>
+                <th className="px-2 py-3 md:px-2 md:py-4 text-center">Actas</th>
+                <th className="px-2 py-3 md:px-2 md:py-4 text-center">
                   Reintegro
                 </th>
               </tr>
@@ -360,23 +387,23 @@ export default function GestionPage() {
             <tbody className=" divide-y divide-slate-700">
               {currentItems.map((entrega) => (
                 <tr className=" border-b border-slate-700" key={entrega.id}>
-                  <td className="px-4 py-1 md:px-6 md:py-4">
+                  <td className="px-3 py-1 md:px-2 md:py-4 pl-4">
                     {entrega.fecha
                       ? new Date(entrega.fecha).toISOString().split("T")[0]
                       : "-"}
                   </td>
 
-                  <td className="px-4 py-1 md:px-6 md:py-1 text-center whitespace-nowrap">
+                  <td className="px-2 py-1 md:px-2 md:py-1 text-center whitespace-nowrap">
                     {entrega.proyecto
                       ? entrega.proyecto.split(" ").slice(0, 2).join(" ") +
                         (entrega.proyecto.split(" ").length > 3 ? "..." : "")
                       : "-"}
                   </td>
 
-                  <td className="px-4 py-1 md:px-6 md:py-4 text-center whitespace-nowrap">
+                  <td className="px-2 py-1 md:px-2 md:py-3 text-center whitespace-nowrap">
                     {entrega.tecnicoData?.nombre || ""}
                   </td>
-                  <td className="px-4 py-1 md:px-6 md:py-4 text-center">
+                  <td className="px-2 py-1 md:px-2 md:py-3 text-center">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getEstadoClase(
                         entrega.estado
@@ -386,16 +413,28 @@ export default function GestionPage() {
                         ? "Reintegro parcial"
                         : entrega.estado === "completamente_devuelta"
                         ? "Reintegro completo"
-                        : entrega.estado === "pendiente" 
+                        : entrega.estado === "pendiente"
                         ? "Sin reintegro"
                         : entrega.estado || "Sin estado"}
                     </span>
                   </td>
-
-                  <td className="px-4 py-1 md:px-6 md:py-4 text-center">
-                    {entrega.EntregaProductos?.length || ""}
+                  <td className="px-2 py-1 md:px-2 md:py-3 text-center">
+                    <div
+                      className={`inline-block border h-2 w-2 rounded-full ${
+                        entrega.wasConfirmed ? "bg-yellow-500" : ""
+                      }`}
+                    ></div>
                   </td>
-                  <td className="px-4 py-1 text-center">
+                  <td className="px-2 py-1 md:px-2 md:py-3 text-center">
+                    <button
+                      onClick={() => openEditModal(entrega.id)}
+                      title="Modificar productos"
+                    >
+                      <i className="fa-solid fa-box-open"></i>
+                    </button>
+                  </td>
+
+                  <td className="px-2 py-1 text-center">
                     <button
                       onClick={() => imprimirActa(entrega)}
                       className="text-xl hover:text-red-500 transition-colors"
@@ -404,7 +443,7 @@ export default function GestionPage() {
                       <i className="fa-solid fa-file-pdf"></i>
                     </button>
                   </td>
-                  <td className="px-4 py-1 text-center">
+                  <td className="px-2 py-1 text-center">
                     <button>
                       <i
                         onClick={() => {
@@ -514,6 +553,14 @@ export default function GestionPage() {
           showNotification={showNotification}
         />
       )}
+
+      <ModificarProductosModal
+        isOpen={modalOpenUpdate}
+        onClose={() => setModalOpenUpdate(false)}
+        entregaId={entregaSeleccionada?.id}
+        entregaActual={entregaSeleccionada}
+        onUpdate={handleUpdate}
+      />
 
       {modalOpenReintegro && (
         <ReintegroModal

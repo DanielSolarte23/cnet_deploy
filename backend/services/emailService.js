@@ -23,15 +23,24 @@ const generateConfirmationToken = (entregaId) => {
 // Función para crear el template del email
 const createEmailTemplate = (entrega, confirmationUrl, accion = "creada") => {
   const productos = entrega.EntregaProductos || [];
+
   const productosHtml = productos
     .map((ep) => {
       const seriadas =
-        ep.unidadesSeriadas && ep.unidadesSeriadas.length > 0
-          ? ` (Unidades seriadas: ${ep.unidadesSeriadas.join(", ")})`
+        Array.isArray(ep.unidadesSeriadasDetalle) &&
+        ep.unidadesSeriadasDetalle.length > 0
+          ? ` (Unidades seriadas: ${ep.unidadesSeriadasDetalle
+              .map((s) => s.serial)
+              .join(", ")})`
           : "";
       return `<li>${ep.descripcion} - Cantidad: ${ep.cantidad}${seriadas}</li>`;
     })
     .join("");
+
+  const fechaEntrega = new Date(entrega.fecha).toLocaleDateString();
+  const fechaDevolucion = entrega.fechaEstimadaDevolucion
+    ? new Date(entrega.fechaEstimadaDevolucion).toLocaleDateString()
+    : "No especificada";
 
   return `
     <!DOCTYPE html>
@@ -42,14 +51,14 @@ const createEmailTemplate = (entrega, confirmationUrl, accion = "creada") => {
   <style>
     body { 
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-      line-height: 1.6; 
+  backend/uploads    line-height: 1.6; 
       color: #e2e8f0; 
       background-color: #020617;
       margin: 0;
       padding: 20px;
     }
     .container { 
-      max-width: 600px; 
+      max-width: 100%; 
       margin: 0 auto; 
       background-color: #1e293b;
       border-radius: 12px;
@@ -96,6 +105,7 @@ const createEmailTemplate = (entrega, confirmationUrl, accion = "creada") => {
       padding: 15px;
       border-radius: 8px;
       border-left: 4px solid #eab308;
+      margin-bottom: 5px;
     }
     .info-label {
       font-weight: bold;
@@ -198,33 +208,33 @@ const createEmailTemplate = (entrega, confirmationUrl, accion = "creada") => {
 <body>
   <div class="container">
     <div class="header">
-      <h1>📦 Entrega ${accion === "creada" ? "Creada" : "Actualizada"}</h1>
+      <h1> Entrega ${accion === "creada" ? "Creada" : "Actualizada"}</h1>
     </div>
     
     <div class="content">
-      <h2>🎯 ${entrega.proyecto}</h2>
+      <h2>${entrega.proyecto}</h2>
       
       <div class="info-grid">
         <div class="info-item">
-          <div class="info-label">📅 FECHA</div>
+          <div class="info-label">FECHA</div>
           <div class="info-value">${new Date(entrega.fecha).toLocaleDateString(
             "es-ES"
           )}</div>
         </div>
         <div class="info-item">
-          <div class="info-label">👨‍🔧 TÉCNICO</div>
+          <div class="info-label">TÉCNICO</div>
           <div class="info-value">${
             entrega.tecnicoData?.nombre || "No especificado"
           }</div>
         </div>
         <div class="info-item">
-          <div class="info-label">👨‍💼 ALMACENISTA</div>
+          <div class="info-label">ALMACENISTA</div>
           <div class="info-value">${
             entrega.almacenistaData?.nombre || "No especificado"
           }</div>
         </div>
         <div class="info-item">
-          <div class="info-label">📋 ESTADO</div>
+          <div class="info-label">ESTADO</div>
           <div class="info-value">${
             accion === "creada" ? "Pendiente Confirmación" : "Actualizada"
           }</div>
@@ -235,7 +245,7 @@ const createEmailTemplate = (entrega, confirmationUrl, accion = "creada") => {
         entrega.observaciones
           ? `
       <div class="observaciones">
-        <div class="info-label">💬 OBSERVACIONES</div>
+        <div class="info-label">OBSERVACIONES</div>
         <div class="info-value">${entrega.observaciones}</div>
       </div>
       `
@@ -243,16 +253,16 @@ const createEmailTemplate = (entrega, confirmationUrl, accion = "creada") => {
       }
       
       <div class="productos">
-        <h3>📋 Productos ${
+        <h3>Productos ${
           accion === "creada" ? "Entregados" : "Actualizados"
         }:</h3>
         <ul>
-          ${productosHtml }
+          ${productosHtml}
         </ul>
       </div>
       
       <div class="confirmation-section">
-        <h3 style="margin-top: 0; color: #eab308;">⚡ Confirmación Requerida</h3>
+        <h3 style="margin-top: 0; color: #eab308;">Confirmación Requerida</h3>
         <p>Para confirmar la recepción de esta entrega, haga clic en el siguiente botón:</p>
         
         <a href="${confirmationUrl}" class="button">✅ Confirmar Entrega</a>

@@ -39,7 +39,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
-          isIn: [["administrador", "almacenista", "talento humano"]],
+          isIn: [["administrador", "almacenista", "talento humano","coordinador"]],
         },
       },
     },

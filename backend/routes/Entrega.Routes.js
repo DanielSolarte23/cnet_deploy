@@ -9,6 +9,15 @@ router.get("/entrega", EntregaController.findAll); // Obtener todas las entregas
 router.get("/entrega/:id", EntregaController.findOne); // Obtener una entrega por ID
 router.get("/entrega/filtro", EntregaController.findByFilters); // Obtener entregas por filtro
 // router.put('/entregas/:id/productos', EntregaController.updateProductos);
+router.put("/entregas/:id/productos", EntregaController.updateProductos);
+
+// Obtener unidades disponibles de un producto
+router.get("/productos/:productoId/unidades-disponibles", EntregaController.getUnidadesDisponibles);
+
+// Obtener unidades de un producto específico en una entrega
+router.get("/entregas/:entregaId/productos/:productoId/unidades", EntregaController.getUnidadesEnEntrega);
+
+
 router.put("/entrega/:id", EntregaController.update); // Actualizar una entrega por ID
 router.delete("/entrega/:id", EntregaController.delete); // Eliminar una entrega por ID
 // router.patch('/entrega/:id', EntregaController.actualizarEstadoEntrega); // Actualizar parcialmente una entrega por ID */
