@@ -8,317 +8,308 @@ const ProductoUnidad = db.ProductoUnidad;
 const Usuario = db.Usuario;
 const Personal = db.Personal;
 const { Op } = require("sequelize");
+const { actualizarEstadoEntregaCoordinado } = require("../services/ActualizarEstadoEntrega");
+
+
 
 const ReintegroController = {
   async create(req, res) {
-    const t = await db.sequelize.transaction();
+  const t = await db.sequelize.transaction();
 
-    try {
-      const { reintegro, productos } = req.body;
+  try {
+    const { reintegro, productos } = req.body;
 
-      // Verificar que la entrega exista
-      if (reintegro.entregaId) {
-        const entregaExiste = await Entrega.findByPk(reintegro.entregaId, {
-          transaction: t,
-        });
-        if (!entregaExiste) {
-          throw new Error(`La entrega con ID ${reintegro.entregaId} no existe`);
-        }
+    // Verificar que la entrega exista
+    if (reintegro.entregaId) {
+      const entregaExiste = await Entrega.findByPk(reintegro.entregaId, {
+        transaction: t,
+      });
+      if (!entregaExiste) {
+        throw new Error(`La entrega con ID ${reintegro.entregaId} no existe`);
       }
+    }
 
-      // Crear el reintegro
-      const nuevoReintegro = await Reintegro.create(reintegro, {
+    // Crear el reintegro
+    const nuevoReintegro = await Reintegro.create(reintegro, {
+      transaction: t,
+    });
+
+    // Procesar los productos del reintegro
+    for (const prod of productos) {
+      // Buscar el producto en inventario
+      const producto = await Producto.findByPk(prod.ProductoId, {
         transaction: t,
       });
 
-      // Procesar los productos del reintegro
-      for (const prod of productos) {
-        // Buscar el producto en inventario
-        const producto = await Producto.findByPk(prod.ProductoId, {
+      if (!producto) {
+        throw new Error(`El producto con ID ${prod.ProductoId} no existe`);
+      }
+
+      // Obtener información base del producto para incluir en ReintegroProducto
+      const infoProducto = {
+        descripcion: producto.descripcion,
+        marca: producto.marca,
+        color: producto.color,
+      };
+
+      // Si viene de una entrega, verificar que se pueda devolver
+      if (reintegro.entregaId) {
+        const entregaProducto = await EntregaProducto.findOne({
+          where: {
+            EntregaId: reintegro.entregaId,
+            ProductoId: prod.ProductoId,
+          },
           transaction: t,
         });
 
-        if (!producto) {
-          throw new Error(`El producto con ID ${prod.ProductoId} no existe`);
+        if (!entregaProducto) {
+          throw new Error(
+            `El producto ${producto.descripcion} no pertenece a la entrega seleccionada`
+          );
         }
 
-        // Obtener información base del producto para incluir en ReintegroProducto
-        const infoProducto = {
-          descripcion: producto.descripcion,
-          marca: producto.marca,
-          color: producto.color,
-        };
+        const cantidadPendiente =
+          entregaProducto.cantidad - (entregaProducto.devuelto || 0);
 
-        // Si viene de una entrega, verificar que se pueda devolver
-        if (reintegro.entregaId) {
-          const entregaProducto = await EntregaProducto.findOne({
-            where: {
-              EntregaId: reintegro.entregaId,
-              ProductoId: prod.ProductoId,
-            },
-            transaction: t,
-          });
+        // Verificar si el producto tiene unidades con seriales
+        if (
+          prod.ProductoUnidads &&
+          Array.isArray(prod.ProductoUnidads) &&
+          prod.ProductoUnidads.length > 0
+        ) {
+          // Para productos con seriales, verificamos cada unidad específica
+          const cantidad = prod.ProductoUnidads.length;
 
-          if (!entregaProducto) {
+          // Verificar que no se devuelva más de lo pendiente
+          if (cantidad > cantidadPendiente) {
             throw new Error(
-              `El producto ${producto.descripcion} no pertenece a la entrega seleccionada`
+              `No se puede devolver más cantidad de la que se entregó para ${producto.descripcion}`
             );
           }
 
-          const cantidadPendiente =
-            entregaProducto.cantidad - entregaProducto.devuelto;
-
-          // Verificar si el producto tiene unidades con seriales
-          if (
-            prod.ProductoUnidads &&
-            Array.isArray(prod.ProductoUnidads) &&
-            prod.ProductoUnidads.length > 0
-          ) {
-            // Para productos con seriales, verificamos cada unidad específica
-            const cantidad = prod.ProductoUnidads.length;
-
-            // Verificar que no se devuelva más de lo pendiente
-            if (cantidad > cantidadPendiente) {
-              throw new Error(
-                `No se puede devolver más cantidad de la que se entregó para ${producto.descripcion}`
-              );
-            }
-
-            // Verificar que todas las unidades existan y pertenezcan al producto original
-            for (const unidadId of prod.ProductoUnidads) {
-              const unidad = await db.ProductoUnidad.findOne({
-                where: {
-                  id: unidadId,
-                  productoId: prod.ProductoId,
-                },
-                transaction: t,
-              });
-
-              if (!unidad) {
-                throw new Error(
-                  `La unidad con ID ${unidadId} no existe o no pertenece al producto ${producto.descripcion}`
-                );
-              }
-
-              // CORRECCIÓN: Verificar que la unidad esté en las unidades entregadas originalmente
-              // El campo en EntregaProducto se llama 'unidadesSeriadas', no 'ProductoUnidads'
-              if (
-                entregaProducto.unidadesSeriadas &&
-                Array.isArray(entregaProducto.unidadesSeriadas) &&
-                !entregaProducto.unidadesSeriadas.includes(unidadId)
-              ) {
-                throw new Error(
-                  `La unidad con ID ${unidadId} no fue entregada en la entrega original`
-                );
-              }
-
-              // Actualizar el estado de la unidad si existe la tabla ProductoUnidad
-              if (unidad) {
-                unidad.estado = "reintegrado";
-                await unidad.save({ transaction: t });
-              }
-            }
-
-            // Actualizar el campo devuelto en EntregaProducto
-            entregaProducto.devuelto += cantidad;
-
-            // Crear el registro en ReintegroProducto con las unidades seriadas
-            await ReintegroProducto.create(
-              {
-                ReintegroId: nuevoReintegro.id,
-                ProductoId: prod.ProductoId,
-                cantidad: cantidad,
-                ProductoUnidads: prod.ProductoUnidads,
-                ...infoProducto,
-              },
-              { transaction: t }
-            );
-
-            // Actualizar el stock
-            producto.stock += cantidad;
-            await producto.save({ transaction: t });
-          } else {
-            // Para productos sin seriales
-            if (prod.cantidad > cantidadPendiente) {
-              throw new Error(
-                `No se puede devolver más cantidad de la que se entregó para ${producto.descripcion}`
-              );
-            }
-
-            // Actualizar el campo devuelto en EntregaProducto
-            entregaProducto.devuelto += prod.cantidad;
-
-            // Crear el registro en ReintegroProducto
-            await ReintegroProducto.create(
-              {
-                ReintegroId: nuevoReintegro.id,
-                ProductoId: prod.ProductoId,
-                cantidad: prod.cantidad,
-                ...infoProducto,
-              },
-              { transaction: t }
-            );
-
-            // Actualizar el stock
-            producto.stock += prod.cantidad;
-            await producto.save({ transaction: t });
-          }
-
-          // Actualizar el estado del EntregaProducto
-          if (entregaProducto.devuelto === entregaProducto.cantidad) {
-            entregaProducto.estado = "devuelto_completo";
-          } else if (entregaProducto.devuelto > 0) {
-            entregaProducto.estado = "devuelto_parcial";
-          }
-
-          await entregaProducto.save({ transaction: t });
-        } else {
-          // Si no viene de una entrega específica (reintegro directo)
-          if (
-            prod.ProductoUnidads &&
-            Array.isArray(prod.ProductoUnidads) &&
-            prod.ProductoUnidads.length > 0
-          ) {
-            const cantidad = prod.ProductoUnidads.length;
-
-            // Verificar que todas las unidades existan
-            for (const unidadId of prod.ProductoUnidads) {
-              const unidad = await db.ProductoUnidad.findOne({
-                where: {
-                  id: unidadId,
-                  productoId: prod.ProductoId,
-                },
-                transaction: t,
-              });
-
-              if (!unidad) {
-                throw new Error(
-                  `La unidad con ID ${unidadId} no existe o no pertenece al producto ${producto.descripcion}`
-                );
-              }
-
-              // Actualizar el estado de la unidad
-              unidad.estado = 'reintegrado';
-              await unidad.save({ transaction: t });
-            }
-
-            // Crear el registro en ReintegroProducto con las unidades seriadas
-            await ReintegroProducto.create(
-              {
-                ReintegroId: nuevoReintegro.id,
-                ProductoId: prod.ProductoId,
-                cantidad: cantidad,
-                ProductoUnidads: prod.ProductoUnidads,
-                ...infoProducto,
-              },
-              { transaction: t }
-            );
-
-            // Actualizar el stock
-            producto.stock += cantidad;
-            await producto.save({ transaction: t });
-          } else {
-            // Para productos sin seriales en reintegro directo
-            // Crear el registro en ReintegroProducto
-            await ReintegroProducto.create(
-              {
-                ReintegroId: nuevoReintegro.id,
-                ProductoId: prod.ProductoId,
-                cantidad: prod.cantidad,
-                ...infoProducto,
-              },
-              { transaction: t }
-            );
-
-            // Actualizar el stock
-            producto.stock += prod.cantidad;
-            await producto.save({ transaction: t });
-          }
-        }
-      }
-
-      await t.commit();
-
-      // Actualizar el estado de la entrega si corresponde
-      if (reintegro.entregaId) {
-        const entregaController = require("./Entrega.Controller");
-        await entregaController.actualizarEstadoEntrega(reintegro.entregaId);
-      }
-
-      // Obtener el reintegro completo con sus relaciones
-      const reintegroCompleto = await Reintegro.findByPk(nuevoReintegro.id, {
-        include: [
-          {
-            model: ReintegroProducto,
-            include: [
-              {
-                model: Producto,
-                include: [
-                  {
-                    model: db.ProductoUnidad,
-                    required: false, // LEFT JOIN para que aparezcan productos sin unidades seriadas
-                  },
-                ],
-              },
-            ],
-            // Incluir todos los campos de ReintegroProducto, incluyendo ProductoUnidads
-            attributes: {
-              include: ["ProductoUnidads"],
-            },
-          },
-          {
-            model: Usuario,
-            as: "almacenistaData",
-            attributes: ["id", "nombre", "username"],
-          },
-          {
-            model: Personal,
-            as: "tecnicoData",
-            attributes: ["id", "nombre", "cedula", "cargo"],
-          },
-          {
-            model: Entrega,
-            as: "entregaOriginal",
-          },
-        ],
-      });
-
-      // Enriquecer los datos con las unidades específicas devueltas
-      if (reintegroCompleto && reintegroCompleto.ReintegroProductos) {
-        for (const reintegroProducto of reintegroCompleto.ReintegroProductos) {
-          if (
-            reintegroProducto.ProductoUnidads &&
-            reintegroProducto.ProductoUnidads.length > 0
-          ) {
-            // Obtener los detalles de las unidades específicas devueltas
-            const unidadesDevueltas = await db.ProductoUnidad.findAll({
+          // Verificar que todas las unidades existan y pertenezcan al producto original
+          for (const unidadId of prod.ProductoUnidads) {
+            const unidad = await db.ProductoUnidad.findOne({
               where: {
-                id: reintegroProducto.ProductoUnidads,
-                productoId: reintegroProducto.ProductoId,
+                id: unidadId,
+                productoId: prod.ProductoId,
               },
-              attributes: ["id", "serial", "estado", "observaciones"],
+              transaction: t,
             });
 
-            // Agregar las unidades como una propiedad adicional
-            reintegroProducto.dataValues.UnidadesDevueltas = unidadesDevueltas;
+            if (!unidad) {
+              throw new Error(
+                `La unidad con ID ${unidadId} no existe o no pertenece al producto ${producto.descripcion}`
+              );
+            }
+
+            // Verificar que la unidad esté en las unidades entregadas originalmente
+            if (
+              entregaProducto.unidadesSeriadas &&
+              Array.isArray(entregaProducto.unidadesSeriadas) &&
+              !entregaProducto.unidadesSeriadas.includes(unidadId)
+            ) {
+              throw new Error(
+                `La unidad con ID ${unidadId} no fue entregada en la entrega original`
+              );
+            }
+
+            // Actualizar el estado de la unidad si existe la tabla ProductoUnidad
+            unidad.estado = "reintegrado";
+            await unidad.save({ transaction: t });
           }
+
+          // Actualizar el campo devuelto en EntregaProducto
+          entregaProducto.devuelto = (entregaProducto.devuelto || 0) + cantidad;
+
+          // Crear el registro en ReintegroProducto con las unidades seriadas
+          await ReintegroProducto.create(
+            {
+              ReintegroId: nuevoReintegro.id,
+              ProductoId: prod.ProductoId,
+              cantidad: cantidad,
+              ProductoUnidads: prod.ProductoUnidads,
+              ...infoProducto,
+            },
+            { transaction: t }
+          );
+
+          // Actualizar el stock
+          producto.stock += cantidad;
+          await producto.save({ transaction: t });
+        } else {
+          // Para productos sin seriales
+          if (prod.cantidad > cantidadPendiente) {
+            throw new Error(
+              `No se puede devolver más cantidad de la que se entregó para ${producto.descripcion}`
+            );
+          }
+
+          // Actualizar el campo devuelto en EntregaProducto
+          entregaProducto.devuelto = (entregaProducto.devuelto || 0) + prod.cantidad;
+
+          // Crear el registro en ReintegroProducto
+          await ReintegroProducto.create(
+            {
+              ReintegroId: nuevoReintegro.id,
+              ProductoId: prod.ProductoId,
+              cantidad: prod.cantidad,
+              ...infoProducto,
+            },
+            { transaction: t }
+          );
+
+          // Actualizar el stock
+          producto.stock += prod.cantidad;
+          await producto.save({ transaction: t });
+        }
+
+        // Guardar los cambios en EntregaProducto
+        await entregaProducto.save({ transaction: t });
+      } else {
+        // Si no viene de una entrega específica (reintegro directo)
+        if (
+          prod.ProductoUnidads &&
+          Array.isArray(prod.ProductoUnidads) &&
+          prod.ProductoUnidads.length > 0
+        ) {
+          const cantidad = prod.ProductoUnidads.length;
+
+          // Verificar que todas las unidades existan
+          for (const unidadId of prod.ProductoUnidads) {
+            const unidad = await db.ProductoUnidad.findOne({
+              where: {
+                id: unidadId,
+                productoId: prod.ProductoId,
+              },
+              transaction: t,
+            });
+
+            if (!unidad) {
+              throw new Error(
+                `La unidad con ID ${unidadId} no existe o no pertenece al producto ${producto.descripcion}`
+              );
+            }
+
+            // Actualizar el estado de la unidad
+            unidad.estado = "reintegrado";
+            await unidad.save({ transaction: t });
+          }
+
+          // Crear el registro en ReintegroProducto con las unidades seriadas
+          await ReintegroProducto.create(
+            {
+              ReintegroId: nuevoReintegro.id,
+              ProductoId: prod.ProductoId,
+              cantidad: cantidad,
+              ProductoUnidads: prod.ProductoUnidads,
+              ...infoProducto,
+            },
+            { transaction: t }
+          );
+
+          // Actualizar el stock
+          producto.stock += cantidad;
+          await producto.save({ transaction: t });
+        } else {
+          // Para productos sin seriales en reintegro directo
+          // Crear el registro en ReintegroProducto
+          await ReintegroProducto.create(
+            {
+              ReintegroId: nuevoReintegro.id,
+              ProductoId: prod.ProductoId,
+              cantidad: prod.cantidad,
+              ...infoProducto,
+            },
+            { transaction: t }
+          );
+
+          // Actualizar el stock
+          producto.stock += prod.cantidad;
+          await producto.save({ transaction: t });
         }
       }
-
-      return res.status(201).json({
-        success: true,
-        message: "Reintegro creado correctamente",
-        data: reintegroCompleto,
-      });
-    } catch (error) {
-      await t.rollback();
-      return res.status(400).json({
-        success: false,
-        message: "Error al crear el reintegro",
-        error: error.message,
-      });
     }
-  },
+
+    if (reintegro.entregaId) {
+      await actualizarEstadoEntregaCoordinado(reintegro.entregaId, t);
+    }
+
+    await t.commit();
+
+    const reintegroCompleto = await Reintegro.findByPk(nuevoReintegro.id, {
+      include: [
+        {
+          model: ReintegroProducto,
+          include: [
+            {
+              model: Producto,
+              include: [
+                {
+                  model: db.ProductoUnidad,
+                  required: false, 
+                },
+              ],
+            },
+          ],
+
+          attributes: {
+            include: ["ProductoUnidads"],
+          },
+        },
+        {
+          model: Usuario,
+          as: "almacenistaData",
+          attributes: ["id", "nombre"],
+        },
+        {
+          model: Personal,
+          as: "tecnicoData",
+          attributes: ["id", "nombre", "cedula", "cargo"],
+        },
+        {
+          model: Entrega,
+          as: "entregaOriginal",
+        },
+      ],
+    });
+
+    // Enriquecer los datos con las unidades específicas devueltas
+    if (reintegroCompleto && reintegroCompleto.ReintegroProductos) {
+      for (const reintegroProducto of reintegroCompleto.ReintegroProductos) {
+        if (
+          reintegroProducto.ProductoUnidads &&
+          reintegroProducto.ProductoUnidads.length > 0
+        ) {
+          // Obtener los detalles de las unidades específicas devueltas
+          const unidadesDevueltas = await db.ProductoUnidad.findAll({
+            where: {
+              id: reintegroProducto.ProductoUnidads,
+              productoId: reintegroProducto.ProductoId,
+            },
+            attributes: ["id", "serial", "estado", "observaciones"],
+          });
+
+          // Agregar las unidades como una propiedad adicional
+          reintegroProducto.dataValues.UnidadesDevueltas = unidadesDevueltas;
+        }
+      }
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Reintegro creado correctamente",
+      data: reintegroCompleto,
+    });
+  } catch (error) {
+    await t.rollback();
+    return res.status(400).json({
+      success: false,
+      message: "Error al crear el reintegro",
+      error: error.message,
+    });
+  }
+},
 
   // Obtener todos los reintegros
   async findAll(req, res) {
@@ -343,7 +334,7 @@ const ReintegroController = {
           {
             model: Usuario,
             as: "almacenistaData",
-            attributes: ["id", "nombre", "username"],
+            attributes: ["id", "nombre"],
           },
           {
             model: Personal,
@@ -389,7 +380,7 @@ const ReintegroController = {
           {
             model: Usuario,
             as: "almacenistaData",
-            attributes: ["id", "nombre", "username"],
+            attributes: ["id", "nombre"],
           },
           {
             model: Personal,

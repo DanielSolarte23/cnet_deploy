@@ -125,7 +125,7 @@ const ActaController = {
           {
             model: Usuario,
             as: "almacenistaData",
-            attributes: ["id", "nombre", "username"],
+            attributes: ["id", "nombre"],
           },
           {
             model: Personal,
@@ -177,7 +177,9 @@ const ActaController = {
       // Si la entrega está parcialmente o completamente devuelta, añadir acta de devolución
       if (
         entrega.estado === "parcialmente_devuelta" ||
-        entrega.estado === "completamente_devuelta"
+        entrega.estado === "completamente_devuelta" 
+        ||
+        entrega.estado === "cerrada" && entrega
       ) {
         const htmlDevolucion =
           await ActaController.generarHTMLDevolucionCompleta(datosActa);

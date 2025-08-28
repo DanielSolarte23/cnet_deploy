@@ -29,68 +29,173 @@ export default function BarraLateral({ isOpen }) {
     setActiveSubMenu((prev) => (prev === menuName ? null : menuName));
   };
 
-  // Función para verificar si un menú debe estar deshabilitado
-  const isMenuDisabled = (menuText) => {
-    if (user?.rol === "coordinador") {
-      // Para coordinadores, solo "Productos" está habilitado
-      return menuText !== "Productos";
+  // Función mejorada para verificar permisos por rol
+  const getMenuPermissions = (userRole, userType) => {
+    // Si no hay usuario autenticado, denegar todo
+    if (!userRole && !userType) {
+      return {
+        inicio: false,
+        almacen: false,
+        personal: false,
+        productos: false,
+      };
     }
-    return false; // Para otros roles, todos los menús están habilitados
+
+    const permissions = {
+      // Roles para usuarios del sistema
+      administrador: {
+        inicio: true,
+        almacen: true,
+        personal: true,
+        productos: true,
+      },
+      almacenista: {
+        inicio: true,
+        almacen: true,
+        personal: false,
+        productos: false,
+      },
+      "talento humano": {
+        inicio: true,
+        almacen: false,
+        personal: true,
+        productos: false,
+      },
+      coordinador: {
+        inicio: true,
+        almacen: false,
+        personal: false,
+        productos: true,
+      },
+      // Para personal (tipo = "personal")
+      personal: {
+        inicio: true,
+        almacen: false,
+        personal: false,
+        productos: true, // Personal puede ver productos limitadamente
+      },
+    };
+
+    // Determinar el rol efectivo
+    let effectiveRole = userRole;
+    if (userType === "personal" && !userRole) {
+      effectiveRole = "personal";
+    } else if (userType === "personal" && userRole) {
+      effectiveRole = userRole; // Mantener el rol si el personal tiene uno asignado
+    }
+
+    return permissions[effectiveRole] || {
+      inicio: true,
+      almacen: false,
+      personal: false,
+      productos: false,
+    };
+  };
+
+  // Obtener permisos del usuario actual
+  const userPermissions = getMenuPermissions(user?.rol, user?.tipo);
+
+  // Función para verificar si un menú debe estar deshabilitado
+  const isMenuDisabled = (menuKey) => {
+    return !userPermissions[menuKey];
+  };
+
+  // Función para obtener las rutas correctas según el rol
+  const getMenuRoute = (menuKey, subMenuKey = null) => {
+    const baseRoutes = {
+      inicio: "/secure/administrador",
+      almacen: "/secure/administrador/almacen",
+      personal: "/secure/administrador/personal",
+      productos: "/secure/coordinadores/productos",
+    };
+
+    // Para submenús de almacén
+    const almacenSubRoutes = {
+      modulos: "/secure/administrador/almacen/stants",
+      categorias: "/secure/administrador/almacen/categorias",
+      productos: "/secure/administrador/almacen/productos",
+      gestion: "/secure/administrador/almacen/gestion",
+    };
+
+    if (subMenuKey && menuKey === "almacen") {
+      return almacenSubRoutes[subMenuKey] || baseRoutes[menuKey];
+    }
+
+    // Ajustar rutas según el rol para casos especiales
+    if (menuKey === "productos" && user?.rol === "coordinador") {
+      return "/secure/coordinadores/productos";
+    }
+
+    return baseRoutes[menuKey] || "/secure/administrador";
   };
 
   const menuItems = [
     {
       icon: "fa-home",
       text: "Inicio",
-      href: "/secure/administrador",
-      pathname: "/secure/administrador",
+      key: "inicio",
+      href: getMenuRoute("inicio"),
+      pathname: getMenuRoute("inicio"),
       hasSubMenu: false,
     },
     {
       icon: "fa-boxes-stacked",
       text: "Almacen",
-      href: "/secure/administrador/almacen",
-      pathname: "/secure/administrador/almacen",
+      key: "almacen",
+      href: getMenuRoute("almacen"),
+      pathname: getMenuRoute("almacen"),
       hasSubMenu: true,
       subMenuName: "almacen",
       subMenuItems: [
         {
           icon: "fa-cube",
           text: "Modulos",
-          href: "/secure/administrador/almacen/stants",
+          key: "modulos",
+          href: getMenuRoute("almacen", "modulos"),
         },
         {
           icon: "fa-tags",
           text: "Categorías",
-          href: "/secure/administrador/almacen/categorias",
+          key: "categorias",
+          href: getMenuRoute("almacen", "categorias"),
         },
         {
           icon: "fa-box",
           text: "Productos",
-          href: "/secure/administrador/almacen/productos",
+          key: "productos",
+          href: getMenuRoute("almacen", "productos"),
         },
         {
           icon: "fa-right-left",
           text: "Entregas/Devoluciones",
-          href: "/secure/administrador/almacen/gestion",
+          key: "gestion",
+          href: getMenuRoute("almacen", "gestion"),
         },
       ],
     },
     {
       icon: "fa-helmet-safety",
       text: "Personal",
-      href: "/secure/administrador/personal",
-      pathname: "/secure/administrador/personal",
+      key: "personal",
+      href: getMenuRoute("personal"),
+      pathname: getMenuRoute("personal"),
       hasSubMenu: false,
     },
     {
       icon: "fa-box",
       text: "Productos",
-      href: "/secure/coordinadores/productos",
-      pathname: "/secure/coordinadores/productos",
+      key: "productos",
+      href: getMenuRoute("productos"),
+      pathname: getMenuRoute("productos"),
       hasSubMenu: false,
     },
   ];
+
+  // Filtrar elementos del menú que el usuario puede ver
+  const visibleMenuItems = menuItems.filter(item => {
+    // Mostrar el ítem si no está deshabilitado O si queremos mostrarlo deshabilitado
+    return true; // Mostramos todos los ítems, pero algunos estarán deshabilitados
+  });
 
   return (
     <div className="w-full h-full border-r">
@@ -128,15 +233,32 @@ export default function BarraLateral({ isOpen }) {
           </div>
         </div>
 
+        {/* Información del usuario (opcional) */}
+        {showText && user && (
+          <div className="px-4 py-2 mb-4 border-b border-slate-200 dark:border-slate-800">
+            <div className="text-xs text-slate-600 dark:text-slate-400">
+              {user.tipo === "usuario" ? "Usuario" : "Personal"}
+            </div>
+            <div className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
+              {user.username || user.nombre}
+            </div>
+            {user.rol && (
+              <div className="text-xs text-yellow-600 dark:text-yellow-400 capitalize">
+                {user.rol}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Menú */}
         <div className="px-2 py-2">
           <div className="space-y-1">
-            {menuItems.map((item, index) => {
+            {visibleMenuItems.map((item, index) => {
               const isSelected =
                 pathname === item.pathname ||
                 (item.hasSubMenu && pathname.startsWith(item.href + "/"));
               
-              const isDisabled = isMenuDisabled(item.text);
+              const isDisabled = isMenuDisabled(item.key);
 
               return (
                 <div key={index} className="menu-item">

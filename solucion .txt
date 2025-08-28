@@ -1,0 +1,517 @@
+Hola, necesito que me ayudes a crear dos vistas en flutter, con tarjetas para mostrar las entregas de un tecnico
+esta es la ruta http establecida para eso http://172.16.110.74:3004/api/personal/entregas/:id aqui me listara todas las
+entregas que se realizaron al personal lo importante es mostrar, el proyecto, fecha fechaEstimadaDevolucion, y lo mas importante
+el estado  
+
+{
+    "success": true,
+    "count": 7,
+    "data": {
+        "personal": {
+            "id": 19,
+            "nombre": "Daniel",
+            "apellido": "Solarte Sanchez",
+            "cedula": "1061813299",
+            "expedicion": "2025-07-24T00:00:00.000Z",
+            "fecha_nacimiento": "2025-07-10T00:00:00.000Z",
+            "cargo": "Software",
+            "departamento": "Popayán(Cauca)",
+            "telefono": "3145644556",
+            "correo": "d4nsol22@gmail.com",
+            "password": "1234567",
+            "activo": true,
+            "firma_path": "uploads/firmas/firma_1061813299_1753377295942.png",
+            "createdAt": "2025-07-24T17:14:56.000Z",
+            "updatedAt": "2025-08-08T13:03:21.000Z"
+        },
+        "entregas": [
+            {
+                "id": 94,
+                "fecha": "2025-08-22T00:00:00.000Z",
+                "proyecto": "Legalizacion 2`",
+                "observaciones": "Legalizacion 2",
+                "estado": "cerrada",
+                "wasConfirmed": true,
+                "fechaEstimadaDevolucion": "2025-08-26T00:00:00.000Z",
+                "fechaCierre": null,
+                "createdAt": "2025-08-22T13:45:16.000Z",
+                "updatedAt": "2025-08-22T14:32:45.000Z",
+                "almacenista": 1,
+                "personalId": 19,
+                "EntregaProductos": [
+                    {
+                        "id": 252,
+                        "cantidad": 50,
+                        "descripcion": "Prueba Legalizacion",
+                        "serial": null,
+                        "marca": "prueba",
+                        "color": "prueba",
+                        "devuelto": 30,
+                        "legalizado": 20,
+                        "estado": "cerrado",
+                        "unidadesSeriadas": null,
+                        "createdAt": "2025-08-22T13:45:16.000Z",
+                        "updatedAt": "2025-08-22T14:32:45.000Z",
+                        "EntregaId": 94,
+                        "ProductoId": 158,
+                        "Producto": {
+                            "id": 158,
+                            "codigo": "PRD-0138",
+                            "descripcion": "Prueba Legalizacion",
+                            "marca": "prueba",
+                            "modelo": "prueba",
+                            "color": "prueba",
+                            "unidadMedida": "unidad",
+                            "stock": 0,
+                            "stockMinimo": 5,
+                            "fechaIngreso": "2025-08-21T21:51:39.000Z",
+                            "estado": "disponible",
+                            "isStockLow": false,
+                            "isReintegrable": false,
+                            "notas": "",
+                            "createdAt": "2025-08-21T21:51:39.000Z",
+                            "updatedAt": "2025-08-22T16:56:33.000Z",
+                            "StantId": 1,
+                            "SubcategoriumId": 5
+                        }
+                    }
+                ],
+                "almacenistaData": {
+                    "id": 1,
+                    "nombre": "Daniel Solarte",
+                    "username": "dansol"
+                }
+            },
+            {
+                "id": 95,
+                "fecha": "2025-08-22T00:00:00.000Z",
+                "proyecto": "Legalizacion 3`",
+                "observaciones": "Prueba Legalizacion 3",
+                "estado": "cerrada",
+                "wasConfirmed": false,
+                "fechaEstimadaDevolucion": "2025-08-26T00:00:00.000Z",
+                "fechaCierre": null,
+                "createdAt": "2025-08-22T14:35:05.000Z",
+                "updatedAt": "2025-08-22T15:08:25.000Z",
+                "almacenista": 1,
+                "personalId": 19,
+                "EntregaProductos": [
+                    {
+                        "id": 253,
+                        "cantidad": 50,
+                        "descripcion": "Prueba Legalizacion",
+                        "serial": null,
+                        "marca": "prueba",
+                        "color": "prueba",
+                        "devuelto": 30,
+                        "legalizado": 20,
+                        "estado": "cerrado",
+                        "unidadesSeriadas": null,
+                        "createdAt": "2025-08-22T14:35:05.000Z",
+                        "updatedAt": "2025-08-22T15:08:25.000Z",
+                        "EntregaId": 95,
+                        "ProductoId": 158,
+                        "Producto": {
+                            "id": 158,
+                            "codigo": "PRD-0138",
+                            "descripcion": "Prueba Legalizacion",
+                            "marca": "prueba",
+                            "modelo": "prueba",
+                            "color": "prueba",
+                            "unidadMedida": "unidad",
+                            "stock": 0,
+                            "stockMinimo": 5,
+                            "fechaIngreso": "2025-08-21T21:51:39.000Z",
+                            "estado": "disponible",
+                            "isStockLow": false,
+                            "isReintegrable": false,
+                            "notas": "",
+                            "createdAt": "2025-08-21T21:51:39.000Z",
+                            "updatedAt": "2025-08-22T16:56:33.000Z",
+                            "StantId": 1,
+                            "SubcategoriumId": 5
+                        }
+                    }
+                ],
+                "almacenistaData": {
+                    "id": 1,
+                    "nombre": "Daniel Solarte",
+                    "username": "dansol"
+                }
+    },...
+
+a esta card puede ser hay que agregarle 2 botones 1 detalles, y la otra para legalizar entrega
+
+en la vista de legalizar entrega va a ir apuntando a esta ruta /entrega/:id"
+
+es importante esta ruta por que aqui se ve mas a detalle la entrega en especial las unidades seriadas  el id
+se optiene de el llamado anterior
+
+{
+    "success": true,
+    "data": {
+        "id": 98,
+        "fecha": "2025-08-22T00:00:00.000Z",
+        "proyecto": "pureba mixta",
+        "observaciones": "Prueba mixta legalizacion",
+        "estado": "pendiente",
+        "wasConfirmed": false,
+        "fechaEstimadaDevolucion": "2025-08-22T00:00:00.000Z",
+        "fechaCierre": null,
+        "createdAt": "2025-08-22T16:56:33.000Z",
+        "updatedAt": "2025-08-22T16:56:33.000Z",
+        "almacenista": 1,
+        "personalId": 19,
+        "EntregaProductos": [
+            {
+                "id": 257,
+                "cantidad": 110,
+                "descripcion": "Prueba Legalizacion",
+                "serial": null,
+                "marca": "prueba",
+                "color": "prueba",
+                "devuelto": 0,
+                "legalizado": 0,
+                "estado": "pendiente",
+                "unidadesSeriadas": null,
+                "createdAt": "2025-08-22T16:56:33.000Z",
+                "updatedAt": "2025-08-22T16:56:33.000Z",
+                "EntregaId": 98,
+                "ProductoId": 158,
+                "Producto": {
+                    "id": 158,
+                    "codigo": "PRD-0138",
+                    "descripcion": "Prueba Legalizacion",
+                    "marca": "prueba",
+                    "modelo": "prueba",
+                    "color": "prueba",
+                    "unidadMedida": "unidad",
+                    "stock": 0,
+                    "stockMinimo": 5,
+                    "fechaIngreso": "2025-08-21T21:51:39.000Z",
+                    "estado": "disponible",
+                    "isStockLow": false,
+                    "isReintegrable": false,
+                    "notas": "",
+                    "createdAt": "2025-08-21T21:51:39.000Z",
+                    "updatedAt": "2025-08-22T16:56:33.000Z",
+                    "StantId": 1,
+                    "SubcategoriumId": 5
+                }
+            },
+            {
+                "id": 258,
+                "cantidad": 1,
+                "descripcion": "Prueba Leg Serial",
+                "serial": null,
+                "marca": "Prueba Leg Serial",
+                "color": "N/A",
+                "devuelto": 0,
+                "legalizado": 0,
+                "estado": "pendiente",
+                "unidadesSeriadas": [
+                    185
+                ],
+                "createdAt": "2025-08-22T16:56:33.000Z",
+                "updatedAt": "2025-08-22T16:56:33.000Z",
+                "EntregaId": 98,
+                "ProductoId": 159,
+                "Producto": {
+                    "id": 159,
+                    "codigo": "PRD-0139",
+                    "descripcion": "Prueba Leg Serial",
+                    "marca": "Prueba Leg Serial",
+                    "modelo": "Serial",
+                    "color": "N/A",
+                    "unidadMedida": "unidad",
+                    "stock": 0,
+                    "stockMinimo": 1,
+                    "fechaIngreso": "2025-08-22T15:10:30.000Z",
+                    "estado": "disponible",
+                    "isStockLow": false,
+                    "isReintegrable": false,
+                    "notas": "",
+                    "createdAt": "2025-08-22T15:10:30.000Z",
+                    "updatedAt": "2025-08-22T16:56:33.000Z",
+                    "StantId": 1,
+                    "SubcategoriumId": 8
+                },
+                "unidadesSeriadasDetalle": [
+                    {
+                        "id": 185,
+                        "serial": "455665"
+                    }
+                ]
+            }
+        ],
+        "almacenistaData": {
+            "id": 1,
+            "nombre": "Daniel Solarte"
+        },
+        "tecnicoData": {
+            "id": 19,
+            "nombre": "Daniel",
+            "cedula": "1061813299",
+            "cargo": "Software"
+        }
+    }
+}
+
+
+ahora bien el metodo para hacer la legalizacion es asi 
+
+async create(req, res) {
+    const t = await db.sequelize.transaction();
+
+    try {
+      const {
+        entregaId,
+        productos,
+        tipo,
+        justificacion,
+        observaciones,
+        ubicacion,
+        evidencia,
+        personalId,
+      } = req.body;
+
+      // Validar que la entrega exista
+      const entrega = await Entrega.findByPk(entregaId, { transaction: t });
+      if (!entrega) {
+        throw new Error("La entrega especificada no existe");
+      }
+
+      // Validar que productos sea un array
+      if (!Array.isArray(productos) || productos.length === 0) {
+        throw new Error(
+          "Debe proporcionar al menos un producto para legalizar"
+        );
+      }
+
+      const legalizacionesCreadas = [];
+
+      // Procesar cada producto
+      for (const prod of productos) {
+        const { productoId, cantidad, unidadesSeriadas } = prod;
+
+        // Validar que el producto exista
+        const producto = await Producto.findByPk(productoId, {
+          transaction: t,
+        });
+        if (!producto) {
+          throw new Error(`El producto con ID ${productoId} no existe`);
+        }
+
+        // Verificar que el producto pertenece a la entrega
+        const entregaProducto = await EntregaProducto.findOne({
+          where: {
+            EntregaId: entregaId,
+            ProductoId: productoId,
+          },
+          transaction: t,
+        });
+
+        if (!entregaProducto) {
+          throw new Error(
+            `El producto ${producto.descripcion} no pertenece a esta entrega`
+          );
+        }
+
+        // Calcular cantidad pendiente de legalizar
+        const cantidadEntregada = entregaProducto.cantidad;
+        const cantidadDevuelta = entregaProducto.devuelto || 0;
+
+        // Obtener cantidad ya legalizada
+        const legalizacionesExistentes =
+          (await Legalizacion.sum("cantidad", {
+            where: {
+              entregaId,
+              productoId,
+              estado: ["pendiente", "aprobada"],
+            },
+            transaction: t,
+          })) || 0;
+
+        const cantidadPendiente =
+          cantidadEntregada - cantidadDevuelta - legalizacionesExistentes;
+
+        // Validar cantidad según si tiene seriales o no
+        if (
+          unidadesSeriadas &&
+          Array.isArray(unidadesSeriadas) &&
+          unidadesSeriadas.length > 0
+        ) {
+          // Para productos con seriales
+          const cantidadSeriales = unidadesSeriadas.length;
+
+          if (cantidad !== cantidadSeriales) {
+            throw new Error(
+              `Para ${producto.descripcion}: La cantidad (${cantidad}) debe coincidir con el número de unidades seriadas (${cantidadSeriales})`
+            );
+          }
+
+          if (cantidadSeriales > cantidadPendiente) {
+            throw new Error(
+              `Para ${producto.descripcion}: Solo puedes legalizar ${cantidadPendiente} unidades`
+            );
+          }
+
+          // Verificar que las unidades pertenecen a la entrega original
+          const entregaUnidades = entregaProducto.unidadesSeriadas || [];
+          for (const unidadId of unidadesSeriadas) {
+            if (!entregaUnidades.includes(unidadId)) {
+              throw new Error(
+                `La unidad ${unidadId} del producto ${producto.descripcion} no pertenece a esta entrega`
+              );
+            }
+
+            // Verificar que la unidad no haya sido ya legalizada o devuelta
+            const unidad = await ProductoUnidad.findByPk(unidadId, {
+              transaction: t,
+            });
+            if (!unidad || unidad.estado === "reintegrado") {
+              throw new Error(
+                `La unidad ${unidadId} del producto ${producto.descripcion} ya fue devuelta`
+              );
+            }
+
+            // Verificar que no esté ya legalizada
+            const legalizacionExistente = await Legalizacion.findOne({
+              where: {
+                entregaId,
+                productoId,
+                estado: ["pendiente", "aprobada"],
+              },
+              transaction: t,
+            });
+
+            if (
+              legalizacionExistente &&
+              legalizacionExistente.unidadesSeriadas &&
+              legalizacionExistente.unidadesSeriadas.includes(unidadId)
+            ) {
+              throw new Error(
+                `La unidad ${unidadId} del producto ${producto.descripcion} ya está legalizada`
+              );
+            }
+          }
+        } else {
+          // Para productos sin seriales
+          if (cantidad > cantidadPendiente) {
+            throw new Error(
+              `Para ${producto.descripcion}: Solo puedes legalizar ${cantidadPendiente} unidades`
+            );
+          }
+        }
+
+        // Crear la legalización para este producto
+        const nuevaLegalizacion = await Legalizacion.create(
+          {
+            entregaId,
+            productoId,
+            personalId,
+            cantidad,
+            tipo,
+            justificacion,
+            observaciones,
+            ubicacion,
+            evidencia,
+            unidadesSeriadas: unidadesSeriadas || null,
+            estado: "pendiente",
+          },
+          { transaction: t }
+        );
+
+        legalizacionesCreadas.push(nuevaLegalizacion.id);
+      }
+
+      await t.commit();
+
+      // Obtener las legalizaciones completas con sus relaciones
+      const legalizacionesCompletas = await Legalizacion.findAll({
+        where: {
+          id: legalizacionesCreadas,
+        },
+        include: [
+          {
+            model: Producto,
+            as: "producto",
+            attributes: ["id", "codigo", "descripcion", "marca"],
+          },
+          {
+            model: Personal,
+            as: "tecnicoData",
+            attributes: ["id", "nombre", "cedula"],
+          },
+          {
+            model: Entrega,
+            as: "entregaOriginal",
+            attributes: ["id", "proyecto", "fecha"],
+          },
+        ],
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: `${legalizacionesCreadas.length} legalización(es) creada(s) correctamente`,
+        data: legalizacionesCompletas,
+      });
+    } catch (error) {
+      await t.rollback();
+      return res.status(400).json({
+        success: false,
+        message: "Error al crear la legalización",
+        error: error.message,
+      });
+    }
+  },
+
+  sale como post por http://172.16.110.74:3004/api/legalizacion
+
+  y la estructura json que debe enviar es asi. 
+
+  {
+  "entregaId": 123,
+  "personalId": 45,
+  "tipo": "instalacion",
+  "justificacion": "Instalación completa de equipos en sitio",
+  "observaciones": "Instalación realizada sin inconvenientes",
+  "ubicacion": "Torre Norte - Piso 3",
+  "evidencia": ["foto1.jpg", "foto2.jpg"],
+  "productos": [
+    {
+      "productoId": 10,
+      "cantidad": 2,
+      "unidadesSeriadas": [101, 102]
+    },
+    {
+      "productoId": 11,
+      "cantidad": 5
+    },
+    {
+      "productoId": 12,
+      "cantidad": 1,
+      "unidadesSeriadas": [205]
+    },
+    {
+      "productoId": 13,
+      "cantidad": 3
+    }
+  ]
+}
+
+debes tener en cuenta que a veces las entregas estan con productos asi
+{
+      "productoId": 13,
+      "cantidad": 3
+    }
+
+    otras veces solo asi
+
+    {
+      "productoId": 12,
+      "cantidad": 1,
+      "unidadesSeriadas": [205]
+    },
+
+    y otras mixta como el ejemplo completo 

@@ -1,3 +1,4 @@
+// models/Entrega.js - Actualización de estados
 module.exports = (sequelize, DataTypes) => {
   const Entrega = sequelize.define("Entrega", {
     fecha: {
@@ -15,19 +16,31 @@ module.exports = (sequelize, DataTypes) => {
         "pendiente",
         "entregada",
         "parcialmente_devuelta",
-        "completamente_devuelta"
+        "completamente_devuelta",
+        "parcialmente_legalizada",  
+        "completamente_legalizada",
+        "mixto_parcial",
+        "cerrada"                   
       ),
       defaultValue: "pendiente",
     },
     wasConfirmed: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
     },
     fechaEstimadaDevolucion: DataTypes.DATE,
+    fechaCierre: {  // NUEVO CAMPO
+      type: DataTypes.DATE,
+      allowNull: true,
+    }
   });
 
   Entrega.associate = (models) => {
     Entrega.hasMany(models.EntregaProducto);
+    Entrega.hasMany(models.Legalizacion, {
+      foreignKey: "entregaId",
+      as: "legalizaciones"
+    });
 
     // Relación con el almacenista (Usuario)
     Entrega.belongsTo(models.Usuario, {
@@ -39,7 +52,7 @@ module.exports = (sequelize, DataTypes) => {
     Entrega.belongsTo(models.Personal, {
       foreignKey: "personalId",
       as: "tecnicoData",
-      allowNull: true, // Puede ser nulo como solicitaste
+      allowNull: true,
     });
   };
 

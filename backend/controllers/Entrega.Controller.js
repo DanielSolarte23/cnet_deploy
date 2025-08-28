@@ -577,6 +577,7 @@ const Usuario = db.Usuario;
 const Personal = db.Personal;
 const { Op } = require("sequelize");
 const { sendConfirmationEmail } = require("../services/emailService");
+const { actualizarEstadoEntregaCoordinado } = require("../services/ActualizarEstadoEntrega");
 
 const EntregaController = {
   async create(req, res) {
@@ -584,7 +585,7 @@ const EntregaController = {
     let transactionCommitted = false;
 
     try {
-      const { entrega, productos, recipientEmail } = req.body; 
+      const { entrega, productos, recipientEmail } = req.body;
 
       // Crear la entrega
       const nuevaEntrega = await Entrega.create(entrega, { transaction: t });
@@ -712,7 +713,7 @@ const EntregaController = {
           {
             model: Usuario,
             as: "almacenistaData",
-            attributes: ["id", "nombre", "username"],
+            attributes: ["id", "nombre"],
           },
           {
             model: Personal,
@@ -1176,7 +1177,7 @@ const EntregaController = {
         if (!prod.ProductoId) {
           throw new Error("ProductoId es requerido para cada producto");
         }
- 
+
         // Buscar el producto en inventario
         const producto = await Producto.findByPk(prod.ProductoId, {
           transaction: t,
@@ -1206,7 +1207,8 @@ const EntregaController = {
         }
       }
 
-      // Confirmar la transacción ANTES de hacer consultas adicionales
+      await actualizarEstadoEntregaCoordinado(id, t);
+
       await t.commit();
       transactionCommitted = true;
 
@@ -1305,7 +1307,7 @@ const EntregaController = {
         where: {
           id: prod.unidadesSeriadas,
           productoId: prod.ProductoId,
-          estado: ['nuevo', 'usado', 'reintegrado'],
+          estado: ["nuevo", "usado", "reintegrado"],
         },
         transaction,
       });
@@ -1609,7 +1611,7 @@ const EntregaController = {
               {
                 model: Usuario,
                 as: "almacenistaData",
-                attributes: ["id", "nombre", "username"],
+                attributes: ["id", "nombre"],
               },
               {
                 model: Personal,

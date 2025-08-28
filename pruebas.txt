@@ -364,3 +364,46 @@ GET /productos-asignados/busqueda-rapida?q=ABC
 busqueda rapida de productos
 http://172.16.110.74:3004/api/productos/busqueda-rapida?q=PRD-0082
    
+
+
+{
+    "entregaId": 92,
+    "productoId": 158,
+    "personalId": 19,
+    "cantidad": 50,
+    "tipo": "instalado",
+    "justificacion": "Pruebas instalados en el proyecto de fibra óptica del sector norte",
+    "observaciones": "Instalación completada sin inconvenientes",
+    "ubicacion": "Sector Norte - Manzanas 1-5",
+    "evidencia": [
+        {
+            "tipo": "foto",
+            "url": "https://storage.example.com/evidencias/cables_instalados_001.jpg",
+            "descripcion": "Cables instalados en postes"
+        }
+    ]
+}
+
+--------------------------
+aprobar legalizacion
+-------------------------
+
+// 1. Aprobación individual (PUT /legalizaciones/:id/aprobar)
+{
+  "almacenistaId": 5,
+  "observaciones": "Aprobada después de verificar la instalación"
+}
+
+// 2. Aprobación múltiple (POST /legalizaciones/aprobar-multiples)
+{
+  "legalizacionIds": [45, 46, 47, 48],
+  "almacenistaId": 5,
+  "observaciones": "Lote de legalizaciones aprobado después de verificación en sitio"
+}
+
+// 3. Aprobación por entrega (PUT /entregas/:entregaId/aprobar-legalizaciones)
+{
+  "almacenistaId": 5,
+  "observaciones": "Todas las legalizaciones de la entrega 123 aprobadas"
+}
+

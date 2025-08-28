@@ -10,17 +10,17 @@ import { useAuth } from "@/context/AuthContext";
 
 function InicioForm() {
   const {
-    register, 
+    register,
     handleSubmit,
     formState: { errors },
-    reset
+    reset,
   } = useForm();
   const {
     signin,
     isAuthenticated,
     errors: signErrors,
     loading: authLoading,
-    user
+    user,
   } = useAuth();
   const [localLoading, setLocalLoading] = useState(false);
   const [showPassword, setShowPassword] = useState("password");
@@ -33,6 +33,7 @@ function InicioForm() {
       // Si el signin es exitoso, el useEffect manejará la redirección
       if (result) {
         console.log("Login exitoso:", result);
+        console.log("Este es el usuario", user);
       }
     } catch (error) {
       console.error("Error en login:", error);
@@ -73,41 +74,41 @@ function InicioForm() {
           ))}
         </div>
       )}
-      
+
       <h2 className="text-2xl sm:text-3xl text-slate-950 dark:text-gray-300 font-bold">
         Inicia sesión
       </h2>
       <p className="text-gray-400 text-sm md:text-lg mt-2 md:mt-4 mb-5">
-        ¡Introduce tu correo y contraseña para iniciar sesión!
+        ¡Introduce tu nombre de usuario y contraseña para iniciar sesión!
       </p>
-      
+
       <form onSubmit={handleSubmit(onSubmit)} className="mt-2">
         <div className="mb-4">
           <div className="w-full h-12 md:h-14 relative">
             <input
-              type="email"
-              placeholder="Ingresa tu correo"
+              type="text"
+              placeholder="Ingresa tu nombre de usuario"
               disabled={isLoading}
-              {...register("correo", {
-                required: "El correo electrónico es obligatorio",
-                pattern: {
-                  value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                  message: "Introduce un correo electrónico válido",
-                },
+              {...register("username", {
+                required: "El nombre de usuario es obligatorio",
+                // pattern: {
+                //   value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                //   message: "Introduce un correo electrónico válido",
+                // },
               })}
               className={`block h-full w-full px-4 py-2 mt-2 text-verde-dos placeholder:dark:text-gray-600 placeholder:text-slate-800 dark:text-slate-400 text-slate-800 placeholder:font-thin bg-transparent border border-gray-600 rounded-lg focus:outline-none text-base md:text-xl pl-10 ${
-                errors.correo ? "border-red-600" : "border-gray-600"
+                errors.username ? "border-red-600" : "border-gray-600"
               } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             />
             <i className="fa-solid fa-envelope absolute text-gray-500 top-1/2 -translate-y-1/2 left-3 text-lg md:text-xl"></i>
           </div>
-          {errors.correo && (
+          {errors.username && (
             <p className="text-red-600 text-sm mt-1">
-              {errors.correo.message}
+              {errors.username.message}
             </p>
           )}
         </div>
-        
+
         <div className="mt-4 md:mt-6">
           <div className="w-full h-12 md:h-14 relative">
             <input
@@ -136,9 +137,7 @@ function InicioForm() {
               }}
               className={`fa-solid absolute text-gray-500 top-1/2 -translate-y-1/2 right-3 text-lg md:text-xl ${
                 isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-              } ${
-                showPassword === "password" ? "fa-eye" : "fa-eye-slash"
-              }`}
+              } ${showPassword === "password" ? "fa-eye" : "fa-eye-slash"}`}
             ></i>
           </div>
           {errors.password && (
@@ -147,7 +146,7 @@ function InicioForm() {
             </p>
           )}
         </div>
-        
+
         <div className="mt-2 md:mt-3">
           <p className="text-gray-400 text-sm md:text-lg">
             ¿Olvidaste tu contraseña?{" "}
@@ -159,7 +158,7 @@ function InicioForm() {
             </Link>
           </p>
         </div>
-        
+
         <div className="mt-4 md:mt-6">
           <button
             type="submit"
@@ -170,9 +169,25 @@ function InicioForm() {
           >
             {isLoading ? (
               <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-slate-950" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-slate-950"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 Iniciando sesión...
               </span>

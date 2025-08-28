@@ -307,7 +307,7 @@ const PersonalController = {
           {
             model: db.Usuario,
             as: "almacenistaData",
-            attributes: ["id", "nombre", "username"],
+            attributes: ["id", "nombre"],
           },
         ],
         order: [["fecha", "DESC"]],

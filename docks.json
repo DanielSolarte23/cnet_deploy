@@ -1,0 +1,254 @@
+{
+  "coleccion_postman_legalizaciones": {
+    "1_crear_legalizacion_productos_sin_serial": {
+      "method": "POST",
+      "url": "{{base_url}}/api/legalizacion",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{token}}"
+      },
+      "body": {
+        "entregaId": 1,
+        "productoId": 5,
+        "personalId": 3,
+        "cantidad": 150,
+        "tipo": "instalado",
+        "justificacion": "Cables instalados en el proyecto de fibra óptica del sector norte",
+        "observaciones": "Instalación completada sin inconvenientes",
+        "ubicacion": "Sector Norte - Manzanas 1-5",
+        "evidencia": [
+          {
+            "tipo": "foto",
+            "url": "https://storage.example.com/evidencias/cables_instalados_001.jpg",
+            "descripcion": "Cables instalados en postes"
+          },
+          {
+            "tipo": "foto",
+            "url": "https://storage.example.com/evidencias/cables_instalados_002.jpg",
+            "descripcion": "Conexiones terminadas"
+          }
+        ]
+      },
+      "descripcion": "Legalizar 150 cables de 400 que fueron entregados (ejemplo del caso que mencionaste)"
+    },
+
+    "2_crear_legalizacion_productos_con_serial": {
+      "method": "POST", 
+      "url": "{{base_url}}/api/legalizacion",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{token}}"
+      },
+      "body": {
+        "entregaId": 2,
+        "productoId": 8,
+        "personalId": 3,
+        "cantidad": 3,
+        "tipo": "instalado",
+        "justificacion": "Equipos instalados en casas de usuarios finales",
+        "observaciones": "Instalación y configuración completada exitosamente",
+        "ubicacion": "Conjunto Residencial Los Pinos",
+        "unidadesSeriadas": [15, 16, 17],
+        "evidencia": [
+          {
+            "tipo": "foto",
+            "url": "https://storage.example.com/evidencias/equipos_instalados_001.jpg",
+            "descripcion": "Equipos instalados y funcionando"
+          },
+          {
+            "tipo": "documento",
+            "url": "https://storage.example.com/evidencias/acta_instalacion.pdf", 
+            "descripcion": "Acta de instalación firmada por el usuario"
+          }
+        ]
+      },
+      "descripcion": "Legalizar 3 equipos específicos con seriales 15, 16, 17"
+    },
+
+    "3_crear_legalizacion_perdido": {
+      "method": "POST",
+      "url": "{{base_url}}/api/legalizacion", 
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{token}}"
+      },
+      "body": {
+        "entregaId": 1,
+        "productoId": 5,
+        "personalId": 3,
+        "cantidad": 50,
+        "tipo": "perdido",
+        "justificacion": "Material perdido durante transporte debido a accidente vehicular",
+        "observaciones": "Se reportó el accidente a las autoridades competentes. Se adjunta constancia policial.",
+        "ubicacion": "Vía principal km 15",
+        "evidencia": [
+          {
+            "tipo": "documento",
+            "url": "https://storage.example.com/evidencias/constancia_policial.pdf",
+            "descripcion": "Constancia policial del accidente"
+          },
+          {
+            "tipo": "foto", 
+            "url": "https://storage.example.com/evidencias/vehiculo_accidentado.jpg",
+            "descripcion": "Estado del vehículo después del accidente"
+          }
+        ]
+      },
+      "descripcion": "Legalizar material perdido por causa de fuerza mayor"
+    },
+
+    "4_crear_legalizacion_dañado": {
+      "method": "POST",
+      "url": "{{base_url}}/api/legalizacion",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{token}}"
+      },
+      "body": {
+        "entregaId": 2,
+        "productoId": 8,
+        "personalId": 3,
+        "cantidad": 1,
+        "tipo": "dañado",
+        "justificacion": "Equipo dañado durante la instalación por descarga eléctrica",
+        "observaciones": "El equipo se dañó debido a una sobretensión en la red eléctrica del cliente",
+        "ubicacion": "Casa #45 Barrio El Carmen",
+        "unidadesSeriadas": [20],
+        "evidencia": [
+          {
+            "tipo": "foto",
+            "url": "https://storage.example.com/evidencias/equipo_dañado.jpg",
+            "descripcion": "Estado del equipo después del daño"
+          }
+        ]
+      },
+      "descripcion": "Legalizar equipo dañado durante instalación"
+    },
+
+    "5_aprobar_legalizacion": {
+      "method": "PUT",
+      "url": "{{base_url}}/api/legalizacion/1/aprobar",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{token}}"
+      },
+      "body": {
+        "almacenistaId": 2,
+        "observaciones": "Legalización aprobada. La documentación y evidencias son satisfactorias."
+      },
+      "descripcion": "Aprobar una legalización pendiente"
+    },
+
+    "6_rechazar_legalizacion": {
+      "method": "PUT", 
+      "url": "{{base_url}}/api/legalizacion/2/rechazar",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{token}}"
+      },
+      "body": {
+        "almacenistaId": 2,
+        "motivoRechazo": "La justificación no es suficiente. Se requiere más evidencia fotográfica del trabajo realizado."
+      },
+      "descripcion": "Rechazar una legalización por falta de evidencia"
+    },
+
+    "7_obtener_legalizaciones_pendientes": {
+      "method": "GET",
+      "url": "{{base_url}}/api/legalizacion/pendientes",
+      "headers": {
+        "Authorization": "Bearer {{token}}"
+      },
+      "descripcion": "Obtener todas las legalizaciones pendientes de aprobación"
+    },
+
+    "8_obtener_legalizaciones_por_entrega": {
+      "method": "GET",
+      "url": "{{base_url}}/api/legalizacion/entrega/1?estado=aprobada",
+      "headers": {
+        "Authorization": "Bearer {{token}}"
+      },
+      "descripcion": "Obtener legalizaciones de una entrega específica, filtradas por estado"
+    },
+
+    "9_obtener_legalizaciones_por_tecnico": {
+      "method": "GET",
+      "url": "{{base_url}}/api/legalizacion/tecnico/3?estado=pendiente",
+      "headers": {
+        "Authorization": "Bearer {{token}}"
+      },
+      "descripcion": "Obtener legalizaciones de un técnico específico"
+    },
+
+    "10_obtener_estadisticas": {
+      "method": "GET",
+      "url": "{{base_url}}/api/legalizacion/stats/resumen?fechaInicio=2024-01-01&fechaFin=2024-12-31&tipo=instalado",
+      "headers": {
+        "Authorization": "Bearer {{token}}"
+      },
+      "descripcion": "Obtener estadísticas de legalizaciones por periodo y tipo"
+    },
+
+    "11_obtener_legalizacion_por_id": {
+      "method": "GET",
+      "url": "{{base_url}}/api/legalizacion/1",
+      "headers": {
+        "Authorization": "Bearer {{token}}"
+      },
+      "descripcion": "Obtener una legalización específica con todos sus detalles"
+    }
+  },
+
+  "variables_postman": {
+    "base_url": "http://localhost:3000",
+    "token": "tu_jwt_token_aqui"
+  },
+
+  "respuestas_ejemplo": {
+    "crear_legalizacion_exitosa": {
+      "success": true,
+      "message": "Legalización creada correctamente",
+      "data": {
+        "id": 1,
+        "fecha": "2024-12-01T10:30:00.000Z",
+        "tipo": "instalado",
+        "cantidad": 150,
+        "justificacion": "Cables instalados en el proyecto de fibra óptica del sector norte",
+        "observaciones": "Instalación completada sin inconvenientes",
+        "ubicacion": "Sector Norte - Manzanas 1-5",
+        "estado": "pendiente",
+        "entregaId": 1,
+        "productoId": 5,
+        "personalId": 3,
+        "producto": {
+          "id": 5,
+          "codigo": "PRD-0005",
+          "descripcion": "Cable de fibra óptica monomodo",
+          "marca": "Furukawa"
+        },
+        "tecnicoData": {
+          "id": 3,
+          "nombre": "Carlos Rodríguez",
+          "cedula": "12345678"
+        },
+        "entregaOriginal": {
+          "id": 1,
+          "proyecto": "Proyecto Fibra Óptica Norte",
+          "fecha": "2024-11-15T08:00:00.000Z"
+        }
+      }
+    },
+
+    "error_cantidad_excedida": {
+      "success": false,
+      "message": "Error al crear la legalización",
+      "error": "Solo puedes legalizar 200 unidades de este producto"
+    },
+
+    "error_unidades_no_pertenecen": {
+      "success": false,
+      "message": "Error al crear la legalización", 
+      "error": "La unidad 25 no pertenece a esta entrega"
+    }
+  }
+}
