@@ -804,7 +804,7 @@ const EntregaController = {
                     where: {
                       id: entregaProducto.unidadesSeriadas,
                     },
-                    attributes: ["id", "serial"],
+                    attributes: ["id", "serial", "estado"],
                     raw: true,
                   });
 
@@ -888,19 +888,23 @@ const EntregaController = {
                 where: {
                   id: entregaProducto.unidadesSeriadas,
                 },
-                attributes: ["id", "serial"],
+                attributes: ["id", "serial", "estado"],
                 raw: true,
               });
 
-              const serialMap = unidadesConSerial.reduce((map, unidad) => {
-                map[unidad.id] = unidad.serial;
+              const unidadesMap = unidadesConSerial.reduce((map, unidad) => {
+                map[unidad.id] = {
+                  serial: unidad.serial,
+                  estado: unidad.estado,
+                };
                 return map;
               }, {});
 
               entregaProducto.unidadesSeriadasDetalle =
                 entregaProducto.unidadesSeriadas.map((id) => ({
                   id,
-                  serial: serialMap[id] || "Serial no encontrado",
+                  serial: unidadesMap[id]?.serial || "Serial no encontrado",
+                  estado: unidadesMap[id]?.estado || "Estado no encontrado",
                 }));
             }
 
@@ -975,13 +979,13 @@ const EntregaController = {
       }
 
       // Verificar que la entrega esté en estado pendiente
-      if (entrega.estado !== "pendiente") {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Solo se puede regenerar el token para entregas en estado pendiente",
-        });
-      }
+      // if (entrega.estado !== "pendiente" || entrega.estado !== "cerrada") {
+      //   return res.status(400).json({
+      //     success: false,
+      //     message:
+      //       "Solo se puede regenerar el token para entregas en estado pendiente",
+      //   });
+      // }
 
       // Buscar si existe un token actual para esta entrega
       const tokenActual = await db.ConfirmacionToken.findOne({

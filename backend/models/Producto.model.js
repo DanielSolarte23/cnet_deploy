@@ -37,7 +37,7 @@ module.exports = (sequelize, DataTypes) => {
         "agotado",
         "baja",
         "instalacion",
-        "instalado",  
+        "instalado",
         "reintegrado"
       ),
       defaultValue: "disponible",
