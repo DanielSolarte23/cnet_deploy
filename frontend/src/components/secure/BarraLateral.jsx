@@ -53,7 +53,7 @@ export default function BarraLateral({ isOpen }) {
         inicio: true,
         almacen: true,
         personal: false,
-        productos: false,
+        productos: true,
       },
       "talento humano": {
         inicio: true,
@@ -84,12 +84,14 @@ export default function BarraLateral({ isOpen }) {
       effectiveRole = userRole; // Mantener el rol si el personal tiene uno asignado
     }
 
-    return permissions[effectiveRole] || {
-      inicio: true,
-      almacen: false,
-      personal: false,
-      productos: false,
-    };
+    return (
+      permissions[effectiveRole] || {
+        inicio: true,
+        almacen: false,
+        personal: false,
+        productos: false,
+      }
+    );
   };
 
   // Obtener permisos del usuario actual
@@ -115,6 +117,7 @@ export default function BarraLateral({ isOpen }) {
       categorias: "/secure/administrador/almacen/categorias",
       productos: "/secure/administrador/almacen/productos",
       gestion: "/secure/administrador/almacen/gestion",
+      legalizacion: "/secure/administrador/almacen/legalizacion",
     };
 
     if (subMenuKey && menuKey === "almacen") {
@@ -171,6 +174,12 @@ export default function BarraLateral({ isOpen }) {
           key: "gestion",
           href: getMenuRoute("almacen", "gestion"),
         },
+        {
+          icon: "fa-check-to-slot",
+          text: "Legalizaciones",
+          key: "legalizacion",
+          href: getMenuRoute("almacen", "legalizacion"),
+        },
       ],
     },
     {
@@ -192,7 +201,7 @@ export default function BarraLateral({ isOpen }) {
   ];
 
   // Filtrar elementos del menú que el usuario puede ver
-  const visibleMenuItems = menuItems.filter(item => {
+  const visibleMenuItems = menuItems.filter((item) => {
     // Mostrar el ítem si no está deshabilitado O si queremos mostrarlo deshabilitado
     return true; // Mostramos todos los ítems, pero algunos estarán deshabilitados
   });
@@ -257,14 +266,16 @@ export default function BarraLateral({ isOpen }) {
               const isSelected =
                 pathname === item.pathname ||
                 (item.hasSubMenu && pathname.startsWith(item.href + "/"));
-              
+
               const isDisabled = isMenuDisabled(item.key);
 
               return (
                 <div key={index} className="menu-item">
                   {item.hasSubMenu ? (
                     <div
-                      onClick={() => toggleSubMenu(item.subMenuName, isDisabled)}
+                      onClick={() =>
+                        toggleSubMenu(item.subMenuName, isDisabled)
+                      }
                       className={`p-3 flex items-center justify-between 
                         border border-slate-200 dark:border-slate-800 
                         rounded-md px-4 duration-300 

@@ -602,6 +602,74 @@ const LegalizacionController = {
     }
   },
 
+async findAll(req, res) {
+  try {
+    // Extraer parámetros de paginación de la query string
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // Validar que los parámetros sean válidos
+    if (page < 1 || limit < 1 || limit > 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Parámetros de paginación inválidos. Page debe ser >= 1, limit debe estar entre 1 y 100",
+      });
+    }
+
+    // Buscar con paginación
+    const { count, rows: legalizaciones } = await Legalizacion.findAndCountAll({
+      include: [
+        {
+          model: Producto,
+          as: "producto",
+          attributes: ["id", "codigo", "descripcion", "marca"],
+        },
+        {
+          model: Personal,
+          as: "tecnicoData",
+          attributes: ["id", "nombre", "cedula"],
+        },
+        {
+          model: Entrega,
+          as: "entregaOriginal",
+          attributes: ["id", "proyecto", "fecha"],
+        },
+      ],
+      order: [["fecha", "DESC"]],
+      limit: limit,
+      offset: offset,
+    });
+
+    // Calcular metadatos de paginación
+    const totalPages = Math.ceil(count / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    return res.status(200).json({
+      success: true,
+      data: legalizaciones,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalItems: count,
+        itemsPerPage: limit,
+        itemsInCurrentPage: legalizaciones.length,
+        hasNextPage: hasNextPage,
+        hasPrevPage: hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener legalizaciones",
+      error: error.message,
+    });
+  }
+},
+
   // Obtener legalización por ID
   async getById(req, res) {
     try {
@@ -622,7 +690,7 @@ const LegalizacionController = {
           {
             model: Usuario,
             as: "almacenistaData",
-            attributes: ["id", "nombre", "username"],
+            attributes: ["id", "nombre"],
           },
           {
             model: Entrega,
@@ -679,7 +747,7 @@ const LegalizacionController = {
           {
             model: Usuario,
             as: "almacenistaData",
-            attributes: ["id", "nombre", "username"],
+            attributes: ["id", "nombre"],
           },
         ],
         order: [["fecha", "DESC"]],
@@ -725,7 +793,7 @@ const LegalizacionController = {
           {
             model: Usuario,
             as: "almacenistaData",
-            attributes: ["id", "nombre", "username"],
+            attributes: ["id", "nombre"],
           },
         ],
         order: [["fecha", "DESC"]],

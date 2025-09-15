@@ -577,7 +577,9 @@ const Usuario = db.Usuario;
 const Personal = db.Personal;
 const { Op } = require("sequelize");
 const { sendConfirmationEmail } = require("../services/emailService");
-const { actualizarEstadoEntregaCoordinado } = require("../services/ActualizarEstadoEntrega");
+const {
+  actualizarEstadoEntregaCoordinado,
+} = require("../services/ActualizarEstadoEntrega");
 
 const EntregaController = {
   async create(req, res) {
@@ -920,6 +922,124 @@ const EntregaController = {
     }
   },
 
+  async regenerateConfirmationToken(req, res) {
+    try {
+      const { entregaId } = req.params;
+      const { recipientEmail } = req.body;
+
+      // Validar que se proporcione el email
+      if (!recipientEmail) {
+        return res.status(400).json({
+          success: false,
+          message: "El email del destinatario es requerido",
+        });
+      }
+
+      // Buscar la entrega
+      const entrega = await Entrega.findByPk(entregaId, {
+        include: [
+          {
+            model: EntregaProducto,
+            include: [{ model: Producto }],
+            attributes: {
+              include: ["unidadesSeriadas"],
+            },
+          },
+          {
+            model: Usuario,
+            as: "almacenistaData",
+            attributes: ["id", "nombre"],
+          },
+          {
+            model: Personal,
+            as: "tecnicoData",
+            attributes: ["id", "nombre", "cedula", "cargo", "correo"],
+          },
+        ],
+      });
+
+      if (!entrega) {
+        return res.status(404).json({
+          success: false,
+          message: "Entrega no encontrada",
+        });
+      }
+
+      // Verificar que la entrega no esté ya confirmada
+      if (entrega.wasConfirmed) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Esta entrega ya ha sido confirmada. No es posible regenerar el token.",
+        });
+      }
+
+      // Verificar que la entrega esté en estado pendiente
+      if (entrega.estado !== "pendiente") {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Solo se puede regenerar el token para entregas en estado pendiente",
+        });
+      }
+
+      // Buscar si existe un token actual para esta entrega
+      const tokenActual = await db.ConfirmacionToken.findOne({
+        where: { entregaId: entregaId },
+      });
+
+      // Verificar si el token actual está realmente expirado (opcional, pero recomendado)
+      if (tokenActual && new Date() < new Date(tokenActual.expiresAt)) {
+        return res.status(400).json({
+          success: false,
+          message: "El token actual aún no ha expirado",
+          tokenExpiration: tokenActual.expiresAt,
+        });
+      }
+
+      // Si existe un token anterior, eliminarlo para mantener limpia la tabla
+      if (tokenActual) {
+        await db.ConfirmacionToken.destroy({
+          where: { entregaId: entregaId },
+        });
+      }
+
+      // Enviar nuevo email de confirmación (esto generará automáticamente un nuevo token)
+      let emailResult = null;
+      try {
+        emailResult = await sendConfirmationEmail(
+          entrega,
+          recipientEmail,
+          "regenerado" // Indicar que es un token regenerado
+        );
+      } catch (emailError) {
+        console.error("Error enviando email de confirmación:", emailError);
+        return res.status(500).json({
+          success: false,
+          message: "Error al enviar el email con el nuevo token",
+          error: emailError.message,
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Token de confirmación regenerado y enviado correctamente",
+        data: {
+          entregaId: entrega.id,
+          proyecto: entrega.proyecto,
+          emailSent: emailResult?.success || false,
+          sentTo: recipientEmail,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Error al regenerar el token de confirmación",
+        error: error.message,
+      });
+    }
+  },
+
   // Obtener entregas por filtros (fecha, proyecto, técnico)
   async findByFilters(req, res) {
     try {
@@ -969,7 +1089,7 @@ const EntregaController = {
           {
             model: Usuario,
             as: "almacenistaData",
-            attributes: ["id", "nombre", "username"],
+            attributes: ["id", "nombre"],
           },
           {
             model: Personal,
@@ -1016,7 +1136,7 @@ const EntregaController = {
             {
               model: Usuario,
               as: "almacenistaData",
-              attributes: ["id", "nombre", "username"],
+              attributes: ["id", "nombre"],
             },
             {
               model: Personal,
@@ -1122,9 +1242,6 @@ const EntregaController = {
     }
   },
 
-  // Error: Unknown column 'tecnicoData.email' in 'field list'
-  // Reemplaza el método updateProductos completo con esta versión corregida:
-
   async updateProductos(req, res) {
     const t = await db.sequelize.transaction();
     let transactionCommitted = false; // Variable de control
@@ -1225,7 +1342,7 @@ const EntregaController = {
           {
             model: Usuario,
             as: "almacenistaData",
-            attributes: ["id", "nombre", "username"],
+            attributes: ["id", "nombre"],
           },
           {
             model: Personal,

@@ -10,6 +10,8 @@ const LegalizacionController = require("../controllers/legalizacion.controller")
 // Crear nueva legalización (desde app móvil)
 router.post("/legalizacion", LegalizacionController.create);
 
+router.get("/legalizacion", LegalizacionController.findAll);
+
 // Obtener legalizaciones pendientes
 router.get("/legalizacion/pendientes", LegalizacionController.getPendientes);
 

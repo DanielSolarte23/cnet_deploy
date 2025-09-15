@@ -24,8 +24,8 @@ exports.getUsuarioById = async (req, res) => {
 // Crear un usuario
 exports.crearUsuario = async (req, res) => {
   try {
-    const { nombre, cedula, telefono, correo, username, password, rol } = req.body;
-    const newUser = await Usuario.create({ nombre, cedula, telefono,correo, username, password, rol });
+    const { nombre, cedula, telefono, correo,  password, rol } = req.body;
+    const newUser = await Usuario.create({ nombre, cedula, telefono,correo, password, rol });
     res.status(201).json(newUser);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -36,10 +36,10 @@ exports.crearUsuario = async (req, res) => {
 exports.updateUsuario = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, cedula, telefono, correo, username, password, rol } = req.body;
+    const { nombre, cedula, telefono, correo, password, rol } = req.body;
     const usuario = await Usuario.findByPk(id);
     if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
-    await usuario.update({ nombre, cedula, telefono, correo, username, password, rol });
+    await usuario.update({ nombre, cedula, telefono, correo, password, rol });
     res.json(usuario);
   } catch (error) {
     res.status(500).json({ error: error.message });

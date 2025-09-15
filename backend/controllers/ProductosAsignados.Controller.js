@@ -87,7 +87,7 @@ const productosAsignadosController = {
                 {
                   model: Usuario,
                   as: "almacenistaData",
-                  attributes: ["id", "nombre", "username"]
+                  attributes: ["id", "nombre"]
                 }
               ]
             },
@@ -122,7 +122,7 @@ const productosAsignadosController = {
                 {
                   model: Usuario,
                   as: "almacenistaData",
-                  attributes: ["id", "nombre", "username"]
+                  attributes: ["id", "nombre"]
                 }
               ]
             }
@@ -162,7 +162,7 @@ const productosAsignadosController = {
                         {
                           model: Usuario,
                           as: "almacenistaData",
-                          attributes: ["id", "nombre", "username"]
+                          attributes: ["id", "nombre"]
                         }
                       ]
                     }
@@ -272,7 +272,7 @@ const productosAsignadosController = {
           almacenista: almacenista ? {
             id: almacenista.id,
             nombre: almacenista.nombre,
-            username: almacenista.username
+            // username: almacenista.username
           } : null,
 
           // Información adicional si es unidad seriada

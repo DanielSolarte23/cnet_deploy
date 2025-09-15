@@ -9,7 +9,7 @@ const NotificacionController = {
     try {
       const notificaciones = await Notificacion.findAll({
         include: [
-          { model: Usuario, as: 'destinatario', attributes: ['id', 'nombre', 'username', 'rol'] },
+          { model: Usuario, as: 'destinatario', attributes: ['id', 'nombre', 'rol'] },
           { model: Producto, as: 'producto', attributes: ['id', 'descripcion', 'codigo', 'stock', 'stockMinimo'] }
         ],
         order: [['fechaGeneracion', 'DESC']]

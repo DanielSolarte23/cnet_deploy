@@ -720,12 +720,17 @@ const ProductoController = {
     }
   },
 
-  // Resto de métodos sin cambios significativos...
   async findUnidades(req, res) {
     try {
       const { id } = req.params;
+
       const unidades = await ProductoUnidad.findAll({
-        where: { productoId: id },
+        where: {
+          productoId: id,
+          // estado: {
+          //   [Op.in]: ["reintegrado", "nuevo", "usado"],
+          // },
+        },
         include: [
           {
             model: Producto,
@@ -741,12 +746,14 @@ const ProductoController = {
           },
         ],
       });
-      if (!unidades) {
+
+      if (!unidades || unidades.length === 0) {
         return res.status(404).json({
           success: false,
           message: "No se encontraron unidades para este producto",
         });
       }
+
       return res.status(200).json({
         success: true,
         count: unidades.length,
@@ -832,7 +839,7 @@ const ProductoController = {
     try {
       const productos = await Producto.findAll({
         where: {
-          isStockLow: false, 
+          isStockLow: false,
         },
         include: [
           { model: Subcategoria, include: [Categoria] },

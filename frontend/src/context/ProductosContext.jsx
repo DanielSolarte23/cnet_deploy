@@ -10,7 +10,7 @@ import {
   getProductoByStantreRequest,
   updateStockRequest,
   getStockBajoRequest,
-  getProductsRequest
+  getProductsRequest,
 } from "../api/productos";
 
 const ProductosContext = createContext();
@@ -29,6 +29,7 @@ export const useProductos = () => {
 
 export function ProductosProvider({ children }) {
   const [productos, setProductos] = useState([]);
+  const [productosStockBajo, setProductosStockBajo] = useState([]);
   const [cantidad, setCantidad] = useState(0);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState(null);
@@ -51,7 +52,7 @@ export function ProductosProvider({ children }) {
       setLoading(false);
     }
   };
-  
+
   // const getProducts = async () => {
   //   setLoading(true);
   //   try {
@@ -79,22 +80,19 @@ export function ProductosProvider({ children }) {
     }
   };
 
-const getStockBajo = async () => {
-  setLoading(true);
-  try {
-    const res = await getStockBajoRequest();
-    // Solo actualizar si hay datos válidos
-    if (res.data.data && Array.isArray(res.data.data)) {
-      setProductos(res.data.data);
+  const getStockBajo = async () => {
+    setLoading(true);
+    try {
+      const res = await getStockBajoRequest();
+      if (res.data.data && Array.isArray(res.data.data)) {
+        setProductosStockBajo(res.data.data); // Estado separado
+      }
+    } catch (error) {
+      handleError(error, "Error al cargar productos con stock bajo");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    handleError(error, "Error al cargar productos con stock bajo");
-    // Opcional: mantener los productos anteriores en caso de error
-    // setProductos([]);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const createProducto = async (producto) => {
     try {
@@ -203,6 +201,7 @@ const getStockBajo = async () => {
     <ProductosContext.Provider
       value={{
         productos,
+        productosStockBajo,
         loading,
         errors,
         getProductos,

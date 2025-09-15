@@ -27,4 +27,7 @@ router.get('/entregas/confirmar-entrega/:token', EntregaController.confirmEntreg
 router.get("/entregas/:id/acta", ActaController.generarActa);
 router.get("/entregas/:id/acta/preview", ActaController.vistaPrevia);
 
+
+// En tu archivo de rutas (por ejemplo, routes/entregas.js)
+router.post('/:entregaId/regenerate-token', EntregaController.regenerateConfirmationToken);
 module.exports = router;

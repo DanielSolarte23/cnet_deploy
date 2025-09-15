@@ -8,11 +8,13 @@
         <title>Acta de Entrega</title>
 
         <style>
+
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            height: 100vh;
+            height: 105dvh;
+            width: 100%;
         }
 
 
@@ -130,6 +132,17 @@
             left: 150px;
         }
 
+        
+        .membrete{
+            position: fixed;
+            z-index: -3;
+            top: 0  ;
+            left: 0;
+            max-width: 100%;
+            max-height: 100dvh;
+            height: 100dvh;
+        }
+
         td {
         text-transform: uppercase;
         }
@@ -137,11 +150,14 @@
     </head>
 
     <body class="">
+        <div class="membrete">
+            <img src="/imgs/Untitled.png">
+        </div>
         <div class="fondo">
             <img src="/imgs/marcadeagua.png" alt style="height: 400px;">
         </div>
         <header class="header">
-            <img src="/imgs/logo.png" alt="Logo" style="width: 100%">
+            {{!-- <img src="/imgs/logo.png" alt="Logo" style="width: 100%">  --}}
         </header>
 
         <div class="container">
@@ -250,8 +266,12 @@
         </div>
 
         <footer class="footer">
-            <img src="/imgs/footer.png" alt="Footer" style="width: 100%">
+            {{!-- <img src="/imgs/footer.png" alt="Footer" style="width: 100%"> --}}
         </footer>
+
+
+
+   
         <script>
   window.addEventListener('DOMContentLoaded', () => {
     const tbody = document.querySelector('.tabla tbody');

@@ -362,7 +362,7 @@ busqueda de entrega rapida de entregas
 GET /productos-asignados/busqueda-rapida?q=ABC
 
 busqueda rapida de productos
-http://172.16.110.74:3004/api/productos/busqueda-rapida?q=PRD-0082
+http://172.16.110.74:3004/api/productos/busqueda-rapida?q=PRD-0139
    
 
 
@@ -394,7 +394,7 @@ aprobar legalizacion
   "observaciones": "Aprobada después de verificar la instalación"
 }
 
-// 2. Aprobación múltiple (POST /legalizaciones/aprobar-multiples)
+// 2. Aprobación múltiple (POST /legalizacions/multiple)
 {
   "legalizacionIds": [45, 46, 47, 48],
   "almacenistaId": 5,

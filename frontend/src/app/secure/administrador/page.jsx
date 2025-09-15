@@ -6,7 +6,7 @@ import React, { use } from "react";
 import { useState, useEffect } from "react";
 
 function page() {
-  const { productos, getStockBajo } = useProductos();
+  const { productosStockBajo, getStockBajo } = useProductos();
 
   useEffect(() => {
     getStockBajo();
@@ -15,7 +15,7 @@ function page() {
   return (
     <div className="h-full w-full rounded-lg bg-white dark:bg-slate-950">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 grid-rows pb-4">
-        {productos.map((producto) => (
+        {productosStockBajo.map((producto) => (
           <TarjetaProductoVelocimetro key={producto.id} producto={producto} />
         ))}
       </div>

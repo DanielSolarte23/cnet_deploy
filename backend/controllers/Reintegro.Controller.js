@@ -462,7 +462,7 @@ const ReintegroController = {
           {
             model: Usuario,
             as: "almacenistaData",
-            attributes: ["id", "nombre", "username"],
+            attributes: ["id", "nombre"],
           },
           {
             model: Personal,
@@ -513,7 +513,7 @@ const ReintegroController = {
             {
               model: Usuario,
               as: "almacenistaData",
-              attributes: ["id", "nombre", "username"],
+              attributes: ["id", "nombre"],
             },
             {
               model: Personal,
@@ -827,7 +827,7 @@ const ReintegroController = {
           {
             model: Usuario,
             as: "almacenistaData",
-            attributes: ["id", "nombre", "username"],
+            attributes: ["id", "nombre"],
           },
           {
             model: Personal,

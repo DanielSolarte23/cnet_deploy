@@ -26,39 +26,60 @@ const createEmailTemplate = (entrega, confirmationUrl, accion = "creada") => {
 
   const productosHtml = productos
     .map((ep) => {
-      const seriadas =
-        Array.isArray(ep.unidadesSeriadasDetalle) &&
-        ep.unidadesSeriadasDetalle.length > 0
-          ? ` (Unidades seriadas: ${ep.unidadesSeriadasDetalle
-              .map((s) => s.serial)
-              .join(", ")})`
-          : "";
-      return `<li>${ep.descripcion} - Cantidad: ${ep.cantidad}${seriadas}</li>`;
+      // Debug: Log para verificar la estructura
+      // console.log('Procesando producto:', {
+      //   descripcion: ep.descripcion,
+      //   unidadesSeriadasDetalle: ep.unidadesSeriadasDetalle,
+      //   hasUnidades: Array.isArray(ep.unidadesSeriadasDetalle),
+      //   length: ep.unidadesSeriadasDetalle?.length
+      // });
+      
+      // Verificar si hay unidades seriadas detalle
+      let seriadas = "";
+      if (ep.unidadesSeriadasDetalle && 
+          Array.isArray(ep.unidadesSeriadasDetalle) && 
+          ep.unidadesSeriadasDetalle.length > 0) {
+        
+        const serialList = ep.unidadesSeriadasDetalle
+          .map((s) => s.serial)
+          .filter(serial => serial && serial !== null && serial !== "")
+          .join(", ");
+        
+        if (serialList) {
+          seriadas = `<br><strong>Seriales:</strong> <span style="background-color: #4b5563; padding: 2px 6px; border-radius: 4px; font-family: monospace;">${serialList}</span>`;
+        }
+      }
+      
+      return `<li>
+        <strong>${ep.descripcion}</strong><br>
+        <span style="color: #cbd5e1;">Marca: ${ep.marca || "N/A"} | Color: ${ep.color || "N/A"}</span><br>
+        <span style="color: #eab308;">Cantidad: <strong>${ep.cantidad}</strong></span>${seriadas}
+      </li>`;
     })
     .join("");
 
-  const fechaEntrega = new Date(entrega.fecha).toLocaleDateString();
+  const fechaEntrega = new Date(entrega.fecha).toLocaleDateString("es-ES");
   const fechaDevolucion = entrega.fechaEstimadaDevolucion
-    ? new Date(entrega.fechaEstimadaDevolucion).toLocaleDateString()
+    ? new Date(entrega.fechaEstimadaDevolucion).toLocaleDateString("es-ES")
     : "No especificada";
 
-  return `
-    <!DOCTYPE html>
-<html>
+  return `<!DOCTYPE html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Confirmación de Entrega - ${entrega.proyecto}</title>
   <style>
     body { 
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-  backend/uploads    line-height: 1.6; 
+      line-height: 1.6; 
       color: #e2e8f0; 
       background-color: #020617;
       margin: 0;
       padding: 20px;
     }
     .container { 
-      max-width: 100%; 
+      max-width: 800px; 
       margin: 0 auto; 
       background-color: #1e293b;
       border-radius: 12px;
@@ -127,7 +148,7 @@ const createEmailTemplate = (entrega, confirmationUrl, accion = "creada") => {
     .button { 
       display: inline-block; 
       background: linear-gradient(135deg, #eab308 0%, #f59e0b 100%);
-      color: #020617; 
+      color: #020617 !important; 
       padding: 15px 30px; 
       text-decoration: none; 
       border-radius: 8px; 
@@ -141,6 +162,7 @@ const createEmailTemplate = (entrega, confirmationUrl, accion = "creada") => {
     .button:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(234, 179, 8, 0.4);
+      color: #020617 !important;
     }
     .productos { 
       background-color: #374151; 
@@ -158,8 +180,9 @@ const createEmailTemplate = (entrega, confirmationUrl, accion = "creada") => {
       padding-left: 20px;
     }
     .productos li {
-      margin: 8px 0;
+      margin: 15px 0;
       color: #e2e8f0;
+      line-height: 1.5;
     }
     .url-box {
       background-color: #374151;
@@ -168,6 +191,7 @@ const createEmailTemplate = (entrega, confirmationUrl, accion = "creada") => {
       margin: 15px 0;
       border: 1px dashed #6b7280;
       word-break: break-all;
+      font-family: monospace;
     }
     .footer { 
       text-align: center; 
@@ -202,13 +226,19 @@ const createEmailTemplate = (entrega, confirmationUrl, accion = "creada") => {
       .content {
         padding: 20px 15px;
       }
+      .header h1 {
+        font-size: 22px;
+      }
+      .content h2 {
+        font-size: 20px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1> Entrega ${accion === "creada" ? "Creada" : "Actualizada"}</h1>
+      <h1>Entrega ${accion === "creada" ? "Creada" : "Actualizada"}</h1>
     </div>
     
     <div class="content">
@@ -216,56 +246,44 @@ const createEmailTemplate = (entrega, confirmationUrl, accion = "creada") => {
       
       <div class="info-grid">
         <div class="info-item">
-          <div class="info-label">FECHA</div>
-          <div class="info-value">${new Date(entrega.fecha).toLocaleDateString(
-            "es-ES"
-          )}</div>
+          <div class="info-label">FECHA DE ENTREGA</div>
+          <div class="info-value">${fechaEntrega}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">FECHA ESTIMADA DEVOLUCIÓN</div>
+          <div class="info-value">${fechaDevolucion}</div>
         </div>
         <div class="info-item">
           <div class="info-label">TÉCNICO</div>
-          <div class="info-value">${
-            entrega.tecnicoData?.nombre || "No especificado"
-          }</div>
+          <div class="info-value">${entrega.tecnicoData?.nombre || "No especificado"}</div>
         </div>
         <div class="info-item">
           <div class="info-label">ALMACENISTA</div>
-          <div class="info-value">${
-            entrega.almacenistaData?.nombre || "No especificado"
-          }</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">ESTADO</div>
-          <div class="info-value">${
-            accion === "creada" ? "Pendiente Confirmación" : "Actualizada"
-          }</div>
+          <div class="info-value">${entrega.almacenistaData?.nombre || "No especificado"}</div>
         </div>
       </div>
       
-      ${
-        entrega.observaciones
-          ? `
+      ${entrega.observaciones ? `
       <div class="observaciones">
         <div class="info-label">OBSERVACIONES</div>
         <div class="info-value">${entrega.observaciones}</div>
       </div>
-      `
-          : ""
-      }
+      ` : ""}
       
       <div class="productos">
-        <h3>Productos ${
-          accion === "creada" ? "Entregados" : "Actualizados"
-        }:</h3>
+        <h3>📦 Productos ${accion === "creada" ? "Entregados" : "Actualizados"}:</h3>
         <ul>
           ${productosHtml}
         </ul>
       </div>
       
       <div class="confirmation-section">
-        <h3 style="margin-top: 0; color: #eab308;">Confirmación Requerida</h3>
+        <h3 style="margin-top: 0; color: #eab308;">✅ Confirmación Requerida</h3>
         <p>Para confirmar la recepción de esta entrega, haga clic en el siguiente botón:</p>
         
-        <a href="${confirmationUrl}" class="button">✅ Confirmar Entrega</a>
+        <div style="margin: 25px 0;">
+          <a href="${confirmationUrl}" class="button">✅ Confirmar Entrega</a>
+        </div>
         
         <p style="margin-top: 20px; font-size: 14px;">
           <span class="warning-icon">⏰</span>
@@ -289,8 +307,7 @@ const createEmailTemplate = (entrega, confirmationUrl, accion = "creada") => {
     </div>
   </div>
 </body>
-</html>
-  `;
+</html>`;
 };
 
 // Función para enviar email de confirmación
@@ -300,12 +317,20 @@ const sendConfirmationEmail = async (
   accion = "creada"
 ) => {
   try {
+    // Importar helper para enriquecer entrega
+    const { enrichEntregaWithSerials } = require("./entregaHelper");
+    
+    // Enriquecer la entrega con seriales
+    const entregaEnriquecida = await enrichEntregaWithSerials(entrega);
+    
+    // console.log("Entrega enriquecida para email:", JSON.stringify(entregaEnriquecida.EntregaProductos[0], null, 2));
+
     // Generar token de confirmación
-    const token = generateConfirmationToken(entrega.id);
+    const token = generateConfirmationToken(entregaEnriquecida.id);
 
     // Guardar token en base de datos con expiración
     await db.ConfirmacionToken.create({
-      entregaId: entrega.id,
+      entregaId: entregaEnriquecida.id,
       token: token,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días
     });
@@ -319,13 +344,13 @@ const sendConfirmationEmail = async (
     const mailOptions = {
       from: `"Sistema de Entregas" <${process.env.SMTP_USER}>`,
       to: recipientEmail,
-      subject: `Confirmación de Entrega - ${entrega.proyecto}`,
-      html: createEmailTemplate(entrega, confirmationUrl, accion),
+      subject: `Confirmación de Entrega - ${entregaEnriquecida.proyecto}`,
+      html: createEmailTemplate(entregaEnriquecida, confirmationUrl, accion),
     };
 
     // Enviar email
     const info = await transporter.sendMail(mailOptions);
-    console.log("Email enviado:", info.messageId);
+    // console.log("Email enviado:", info.messageId);
 
     return { success: true, messageId: info.messageId };
   } catch (error) {
