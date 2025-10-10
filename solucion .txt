@@ -1,1148 +1,887 @@
-Hola necesito tu ayuda para solucionar algo, o mas bien para mejorar algo que ya funciona pero creo 
-que es necesario, si tu ves este controller de entregas te das cuenta de que al momento de crear una entrega se envia un correo
-con un token para confirmar la entrega. resulta que este token tiene una fecha de vencimiento. y si esta fecha se pasa
-el token vence y ya no se puede confirmar la entrega, esto esta bien y deseo que siga asi, pero me gustaria 
-agregar aqui un metodo con el cual yo pueda volver a generar este token si se vencio. para que me puedan confirmar
-la misma entrega, claro esta que esta entrega no se debe generar nuevamente ya que esto afectaria
-gravemente el stock e inventario del almacen  solo el token de confirmacion. te muestro
+Hola, tengo un servicio en mi backend express, con ssl para notificaciones, pero necesito hacer mi vista el flutter y activar los servicios de notificaciones de android. entonces podrias ayudarme a realizar dicha vista 
 
-const db = require("../models");
-const Entrega = db.Entrega;
-const EntregaProducto = db.EntregaProducto;
-const Producto = db.Producto;
-const Usuario = db.Usuario;
-const Personal = db.Personal;
-const { Op } = require("sequelize");
-const { sendConfirmationEmail } = require("../services/emailService");
-const { actualizarEstadoEntregaCoordinado } = require("../services/ActualizarEstadoEntrega");
+ademas de implementar todas sus funcionalidades.
 
-const EntregaController = {
-async create(req, res) {
-    const t = await db.sequelize.transaction();
-    let transactionCommitted = false;
-
-    try {
-      const { entrega, productos, recipientEmail } = req.body;
-
-      // Crear la entrega
-      const nuevaEntrega = await Entrega.create(entrega, { transaction: t });
-
-      // Procesar los productos de la entrega (código existente)
-      for (const prod of productos) {
-        // Buscar el producto en inventario
-        const producto = await Producto.findByPk(prod.ProductoId, {
-          transaction: t,
-        });
-
-        if (!producto) {
-          throw new Error(`El producto con ID ${prod.ProductoId} no existe`);
-        }
-
-        // Obtener información base del producto para incluir en EntregaProducto
-        const infoProducto = {
-          descripcion: producto.descripcion,
-          marca: producto.marca,
-          color: producto.color,
-        };
-
-        // Verificar si el producto tiene unidades con seriales
-        if (
-          prod.unidadesSeriadas &&
-          Array.isArray(prod.unidadesSeriadas) &&
-          prod.unidadesSeriadas.length > 0
-        ) {
-          // Para productos con seriales, verificamos cada unidad específica
-          const cantidad = prod.unidadesSeriadas.length;
-
-          // Verificar que todas las unidades existan y pertenezcan al producto
-          for (const unidadId of prod.unidadesSeriadas) {
-            const unidad = await db.ProductoUnidad.findOne({
-              where: {
-                id: unidadId,
-                productoId: prod.ProductoId,
-              },
-              transaction: t,
-            });
-
-            if (!unidad) {
-              throw new Error(
-                `La unidad con ID ${unidadId} no existe o no pertenece al producto ${producto.descripcion}`
-              );
-            }
-
-            // Aquí podrías actualizar el estado de la unidad si es necesario
-            unidad.estado = "instalacion";
-            await unidad.save({ transaction: t });
-          }
-
-          // Crear el registro en EntregaProducto con la cantidad basada en las unidades seriadas
-          await EntregaProducto.create(
-            {
-              EntregaId: nuevaEntrega.id,
-              ProductoId: prod.ProductoId,
-              cantidad: cantidad,
-              unidadesSeriadas: prod.unidadesSeriadas, // Guardar los IDs de las unidades específicas
-              ...infoProducto,
-            },
-            { transaction: t }
-          );
-
-          // Actualizar el stock
-          producto.stock -= cantidad;
-          await producto.save({ transaction: t });
-        } else {
-          if (producto.stock < prod.cantidad) {
-            throw new Error(
-              `Stock insuficiente para el producto: ${producto.descripcion}`
-            );
-          }
-
-          // Crear el registro en EntregaProducto
-          await EntregaProducto.create(
-            {
-              EntregaId: nuevaEntrega.id,
-              ProductoId: prod.ProductoId,
-              cantidad: prod.cantidad,
-              ...infoProducto,
-            },
-            { transaction: t }
-          );
-
-          // Actualizar el stock
-          producto.stock -= prod.cantidad;
-          await producto.save({ transaction: t });
-        }
-
-        // Verificar si el stock quedó bajo el mínimo y generar notificación
-        if (producto.stock <= producto.stockMinimo) {
-          await db.Notificacion.create(
-            {
-              tipo: "stock_bajo",
-              mensaje: `Stock bajo para el producto: ${producto.descripcion} (${producto.stock} unidades)`,
-              detalles: {
-                stockActual: producto.stock,
-                stockMinimo: producto.stockMinimo,
-                codigo: producto.codigo || "",
-              },
-              nivel: producto.stock === 0 ? "urgente" : "advertencia",
-              productoId: producto.id,
-            },
-            { transaction: t }
-          );
-        }
-      }
-
-      // Confirmar la transacción ANTES de hacer consultas adicionales
-      await t.commit();
-      transactionCommitted = true;
-
-      // Después del commit, obtener la entrega completa (SIN transacción)
-      const entregaCompleta = await Entrega.findByPk(nuevaEntrega.id, {
-        include: [
-          {
-            model: EntregaProducto,
-            include: [{ model: Producto }],
-            // Asegurar que se incluyan todos los campos, incluyendo unidadesSeriadas
-            attributes: {
-              include: ["unidadesSeriadas"], // Explícitamente incluir el campo
-            },
-          },
-          {
-            model: Usuario,
-            as: "almacenistaData",
-            attributes: ["id", "nombre"],
-          },
-          {
-            model: Personal,
-            as: "tecnicoData",
-            attributes: ["id", "nombre", "cedula", "cargo", "correo"], // Incluir email si existe
-          },
-        ],
-      });
-
-      // Enviar email de confirmación si se proporciona email
-      let emailResult = null;
-      if (recipientEmail) {
-        try {
-          emailResult = await sendConfirmationEmail(
-            entregaCompleta,
-            recipientEmail,
-            "creada"
-          );
-        } catch (emailError) {
-          // Log del error del email pero no fallar la operación
-          console.error("Error enviando email de confirmación:", emailError);
-          emailResult = { success: false, error: emailError.message };
-        }
-      }
-
-      return res.status(201).json({
-        success: true,
-        message: "Entrega creada correctamente",
-        data: entregaCompleta,
-        emailSent: emailResult?.success || false,
-        emailError: emailResult?.error || null,
-      });
-    } catch (error) {
-      // Solo hacer rollback si la transacción no ha sido confirmada
-      if (!transactionCommitted) {
-        await t.rollback();
-      }
-
-      return res.status(400).json({
-        success: false,
-        message: "Error al crear la entrega",
-        error: error.message,
-      });
-    }
-  },
-
-  // Obtener todas las entregas
-  async findAll(req, res) {
-    try {
-      const entregas = await Entrega.findAll({
-        include: [
-          {
-            model: EntregaProducto,
-            include: [{ model: Producto }],
-          },
-          {
-            model: Usuario,
-            as: "almacenistaData",
-            attributes: ["id", "nombre"],
-          },
-          {
-            model: Personal,
-            as: "tecnicoData",
-            attributes: ["id", "nombre", "cedula", "cargo"],
-          },
-        ],
-        order: [["fecha", "DESC"]],
-      });
-
-      // Enriquecer los datos con los seriales
-      const entregasEnriquecidas = await Promise.all(
-        entregas.map(async (entrega) => {
-          const entregaJSON = entrega.toJSON();
-
-          // Procesar cada producto de la entrega
-          if (entregaJSON.EntregaProductos) {
-            entregaJSON.EntregaProductos = await Promise.all(
-              entregaJSON.EntregaProductos.map(async (entregaProducto) => {
-                // Si tiene unidades seriadas, obtener los seriales
-                if (
-                  entregaProducto.unidadesSeriadas &&
-                  Array.isArray(entregaProducto.unidadesSeriadas)
-                ) {
-                  // Obtener los seriales de las unidades
-                  const unidadesConSerial = await db.ProductoUnidad.findAll({
-                    where: {
-                      id: entregaProducto.unidadesSeriadas,
-                    },
-                    attributes: ["id", "serial"],
-                    raw: true,
-                  });
-
-                  // Crear un mapa para acceso rápido
-                  const serialMap = unidadesConSerial.reduce((map, unidad) => {
-                    map[unidad.id] = unidad.serial;
-                    return map;
-                  }, {});
-
-                  // Enriquecer los datos manteniendo la estructura original
-                  entregaProducto.unidadesSeriadasDetalle =
-                    entregaProducto.unidadesSeriadas.map((id) => ({
-                      id: id,
-                      serial: serialMap[id] || "Serial no encontrado",
-                    }));
-                }
-
-                return entregaProducto;
-              })
-            );
-          }
-
-          return entregaJSON;
-        })
-      );
-
-      return res.status(200).json({
-        success: true,
-        count: entregasEnriquecidas.length,
-        data: entregasEnriquecidas,
-      });
-    } catch (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Error al obtener las entregas",
-        error: error.message,
-      });
-    }
-  },
-
-  async findOne(req, res) {
-    try {
-      const { id } = req.params;
-      const entrega = await Entrega.findByPk(id, {
-        include: [
-          {
-            model: EntregaProducto,
-            include: [{ model: Producto }],
-          },
-          {
-            model: Usuario,
-            as: "almacenistaData",
-            attributes: ["id", "nombre"],
-          },
-          {
-            model: Personal,
-            as: "tecnicoData",
-            attributes: ["id", "nombre", "cedula", "cargo"],
-          },
-        ],
-      });
-
-      if (!entrega) {
-        return res.status(404).json({
-          success: false,
-          message: "Entrega no encontrada",
-        });
-      }
-
-      const entregaJSON = entrega.toJSON();
-
-      // Enriquecer productos con seriales
-      if (entregaJSON.EntregaProductos) {
-        entregaJSON.EntregaProductos = await Promise.all(
-          entregaJSON.EntregaProductos.map(async (entregaProducto) => {
-            if (
-              entregaProducto.unidadesSeriadas &&
-              Array.isArray(entregaProducto.unidadesSeriadas)
-            ) {
-              const unidadesConSerial = await db.ProductoUnidad.findAll({
-                where: {
-                  id: entregaProducto.unidadesSeriadas,
-                },
-                attributes: ["id", "serial"],
-                raw: true,
-              });
-
-              const serialMap = unidadesConSerial.reduce((map, unidad) => {
-                map[unidad.id] = unidad.serial;
-                return map;
-              }, {});
-
-              entregaProducto.unidadesSeriadasDetalle =
-                entregaProducto.unidadesSeriadas.map((id) => ({
-                  id,
-                  serial: serialMap[id] || "Serial no encontrado",
-                }));
-            }
-
-            return entregaProducto;
-          })
-        );
-      }
-
-      return res.status(200).json({
-        success: true,
-        data: entregaJSON,
-      });
-    } catch (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Error al obtener la entrega",
-        error: error.message,
-      });
-    }
-  }
-}
-
-tambien te envio los models para que sepas como esta relacionado
-
-module.exports = (sequelize, DataTypes) => {
-  const ConfirmacionToken = sequelize.define("ConfirmacionToken", {
-    token: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-    },
-    entregaId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'Entregas',
-        key: 'id'
-      }
-    },
-    expiresAt: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-    createdAt: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    }
-  }, {
-    tableName: 'ConfirmacionTokens',
-    timestamps: true,
-    updatedAt: false // Solo necesitamos createdAt
-  });
-
-  ConfirmacionToken.associate = (models) => {
-    ConfirmacionToken.belongsTo(models.Entrega, {
-      foreignKey: "entregaId",
-      as: "Entrega",
-    });
-  };
-
-  return ConfirmacionToken;
-};
-
-// models/Entrega.js - Actualización de estados
-module.exports = (sequelize, DataTypes) => {
-  const Entrega = sequelize.define("Entrega", {
-    fecha: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-      allowNull: false,
-    },
-    proyecto: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    observaciones: DataTypes.TEXT,
-    estado: {
-      type: DataTypes.ENUM(
-        "pendiente",
-        "entregada",
-        "parcialmente_devuelta",
-        "completamente_devuelta",
-        "parcialmente_legalizada",  
-        "completamente_legalizada",
-        "mixto_parcial",
-        "cerrada"                   
-      ),
-      defaultValue: "pendiente",
-    },
-    wasConfirmed: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-    },
-    fechaEstimadaDevolucion: DataTypes.DATE,
-    fechaCierre: {  // NUEVO CAMPO
-      type: DataTypes.DATE,
-      allowNull: true,
-    }
-  });
-
-  Entrega.associate = (models) => {
-    Entrega.hasMany(models.EntregaProducto);
-    Entrega.hasMany(models.Legalizacion, {
-      foreignKey: "entregaId",
-      as: "legalizaciones"
-    });
-
-    // Relación con el almacenista (Usuario)
-    Entrega.belongsTo(models.Usuario, {
-      foreignKey: "almacenista",
-      as: "almacenistaData",
-    });
-
-    // Relación con la persona que recibe (Personal)
-    Entrega.belongsTo(models.Personal, {
-      foreignKey: "personalId",
-      as: "tecnicoData",
-      allowNull: true,
-    });
-  };
-
-  return Entrega;
-};
-
-aclaro que si necesitas ver algun archivo de codigo adicional, me digas y no supongas su estructura 
-
-
-
-
-
-Hola te voy a enviar un page de mi proyecto en next.js. que pasa con el de cierta forma esta bien 
-y funcional, pero que pasa necesito agregar 2 funcionalidades nuevas las cuales por lo visto me van a ocupar mucho
-en la tabla, te cuento los dos funciones son 1 detalles de entregay 2 reenviar confirmacion.  
-podria perfecto poner dos iconos mas como modal en la tabla como lo estan ajustar stock, imprimir acta, y agregar productos.
-pero me recargaria muchos iconos en la tabla y no quiero esto. lo que e pensado en dejar un solo icono fa-eye
-donde depliegue los detalles de la entrega. para esto podemos utilizar un endpoint  especifico el cual es http://172.16.110.74:3004/api/entrega/:id para no sobrecargar de informacion el front podemos usar axios.
-
-te muestro como se ve la estrcutura del json que devuelve esta ruta api 
+la ruta es http://172.16.110.74:3004/api/notificaciones/personal/:personalId
+lo cual devuelve 
 {
     "success": true,
-    "data": {
-        "id": 113,
-        "fecha": "2025-09-01T00:00:00.000Z",
-        "proyecto": "Instalacion residencial",
-        "observaciones": "Se entrega material para operación en Popayán Sixto Enrique parcela 64 lagos de morinda",
-        "estado": "cerrada",
-        "wasConfirmed": false,
-        "fechaEstimadaDevolucion": "2025-09-08T00:00:00.000Z",
-        "fechaCierre": null,
-        "createdAt": "2025-09-01T19:18:06.000Z",
-        "updatedAt": "2025-09-11T13:03:28.000Z",
-        "almacenista": 1,
-        "personalId": 8,
-        "EntregaProductos": [
-            {
-                "id": 309,
-                "cantidad": 3,
-                "descripcion": "ONT ZYXEL",
-                "serial": null,
-                "marca": "ZYXEL",
-                "color": "BLANCO",
-                "devuelto": 1,
-                "legalizado": 2,
-                "estado": "cerrado",
-                "unidadesSeriadas": [
-                    198,
-                    205,
-                    199
-                ],
-                "createdAt": "2025-09-01T19:18:06.000Z",
-                "updatedAt": "2025-09-11T13:03:28.000Z",
-                "EntregaId": 113,
-                "ProductoId": 96,
-                "Producto": {
-                    "id": 96,
-                    "codigo": "PRD-0092",
-                    "descripcion": "ONT ZYXEL",
-                    "marca": "ZYXEL",
-                    "modelo": "PX3321-T1",
-                    "color": "BLANCO",
-                    "unidadMedida": "unidad",
-                    "stock": 33,
-                    "stockMinimo": 2,
-                    "fechaIngreso": "2025-07-28T16:54:15.000Z",
-                    "estado": "disponible",
-                    "isStockLow": false,
-                    "isReintegrable": false,
-                    "notas": "",
-                    "createdAt": "2025-07-28T16:54:15.000Z",
-                    "updatedAt": "2025-09-10T14:44:24.000Z",
-                    "StantId": 6,
-                    "SubcategoriumId": 1
-                },
-                "unidadesSeriadasDetalle": [
+    "count": 1,
+    "data": [
+        {
+            "id": 238,
+            "tipo": "confirmacion",
+            "mensaje": "Nueva entrega asignada - ID: 143",
+            "detalles": {
+                "proyecto": "Prueba Notificaciones SSL",
+                "entregaId": 143,
+                "productos": [
                     {
-                        "id": 198,
-                        "serial": "ZYXE8CB85A5A"
-                    },
-                    {
-                        "id": 205,
-                        "serial": "ZYXE8CB85BA3"
-                    },
-                    {
-                        "id": 199,
-                        "serial": "ZYXE8CB85BA6"
+                        "cantidad": 10,
+                        "descripcion": "Prueba Legalizacion"
                     }
-                ]
-            }
-        ],
-        "almacenistaData": {
-            "id": 1,
-            "nombre": "Daniel Solarte"
-        },
-        "tecnicoData": {
-            "id": 8,
-            "nombre": "Kevin David",
-            "cedula": "1002970548",
-            "cargo": "Empalmador"
+                ],
+                "fechaEntrega": "2025-09-18T00:00:00.000Z",
+                "numeroProductos": 1
+            },
+            "leida": false,
+            "fechaGeneracion": "2025-09-18T20:53:51.000Z",
+            "fechaLectura": null,
+            "nivel": "informativa",
+            "createdAt": "2025-09-18T20:53:51.000Z",
+            "updatedAt": "2025-09-18T20:53:51.000Z",
+            "productoId": null,
+            "usuarioId": null,
+            "personalId": 19,
+            "producto": null,
+            "destinatario": null
         }
-    }
-},
-
-y me diras que pasa con los otros modals que ya tiene la tabla pues se agregan aqui en este modal de detalle, y se agrega una nueva funcionalidad la cual es "reenviar confirmacion", su ruta   http://172.16.110.74:3004/api/:entregaId/regenerate-token
-
-esto es un metodo post el cual espera un json con esta estructura 
-
-{
-  "recipientEmail": "tecnico@empresa.com"
+    ]
 }
 
+y otras rutas para sus demas funcionalidades router.get('/personal/:personalId/count', NotificacionController.getUnreadCountByPersonal);
+router.patch('/personal/:personalId/marcar-todas-leidas', NotificacionController.marcarTodasLeidasPersonal);
 
-ahora este es el page 
-"use client";
-import { useState, useEffect, useMemo, useRef } from "react";
-import LoadingScreen from "@/components/reutilizables/LoadingScreen";
-import NotificationModal from "@/components/reutilizables/NotificacionModal";
-import Paginacion from "@/components/reutilizables/Paginacion";
-import { useProductos } from "@/context/ProductosContext";
-import { useParams } from "next/navigation";
-import FormularioMultipaso from "@/components/secure/admin/FormPrueba2";
-import FormStock from "@/components/secure/FormStock";
-import { useEntregas } from "@/context/EntregaContext";
-import FormularioEntrega from "@/components/secure/EntregaForm";
-import html2pdf from "html2pdf.js";
-import ActaPDFAislada from "@/components/secure/ActaEntregaProductos";
-import axios from "axios";
-import { ReintegroModal } from "@/components/secure/almacenista/FormReintegro";
-import { ModificarProductosModal } from "@/components/secure/almacenista/UpdateEntregaForm";
+// Rutas de notificación individual
+router.patch('/:id/marcar-leida', NotificacionController.marcarLeida);
 
-export default function GestionPage() {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [productoSeleccionado, setProductoSeleccionado] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [modalStock, setModalStock] = useState(false);
-  const [entregaSeleccionada, setEntregaSeleccionada] = useState(null);
-  const [modalOpenReintegro, setModalOpenReintegro] = useState(false);
-  const [entregaIdParaReintegro, setEntregaIdParaReintegro] = useState(null);
-  const { getEntregas, entregas, loading, error } = useEntregas();
-  const [modalOpenUpdate, setModalOpenUpdate] = useState(false);
+// Ruta SSE para conexión en tiempo real
+router.get('/sse', NotificacionController.sseConnect);
 
-  useEffect(() => {
-    getEntregas();
-  }, []);
+router.delete('/:id', NotificacionController.delete);
 
-  const imprimirActa = async (entrega) => {
-    try {
-      const response = await axios.get(
-        `http://172.16.110.74:3004/api/entregas/${entrega.id}/acta/preview`,
-        {
-          headers: {
-            Accept: "text/html",
-          },
-          responseType: "text",
-        }
-      );
+los id del personal y la ruta donde deberia abrirse esta vista estan aqui. 
 
-      let htmlContent = response.data;
+import 'package:another_flushbar/flushbar.dart';
+import 'package:colombianet_app/views/gestionEntregas.dart';
+import 'package:colombianet_app/views/login.dart';
+import 'dart:ui';
+import 'package:colombianet_app/views/searchMaterials.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:colombianet_app/controller/authController.dart';
 
-      // Agregar base para rutas relativas
-      if (!htmlContent.includes("<base")) {
-        htmlContent = htmlContent.replace(
-          /<head>/i,
-          `<head><base href="http://172.16.110.74:3004">`
-        );
-      }
+class HomeAdmin extends StatefulWidget {
+  final int personalId; // Agregar este parámetro
+  final String? nombreUsuario; // Opcional
+  
+  const HomeAdmin({
+    Key? key,
+    required this.personalId, // Hacerlo requerido
+    this.nombreUsuario,
+  }) : super(key: key);
 
-      // OPCIÓN 1: Usar iframe oculto (recomendado para impresión directa)
-      const iframe = document.createElement("iframe");
-      iframe.style.position = "absolute";
-      iframe.style.width = "0";
-      iframe.style.height = "0";
-      iframe.style.border = "none";
-      iframe.style.visibility = "hidden";
+  @override
+  _HomeAdminState createState() => _HomeAdminState();
+}
 
-      document.body.appendChild(iframe);
+class _HomeAdminState extends State<HomeAdmin> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+  final AuthService _authService = AuthService(); // Instancia del AuthService
 
-      const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-      iframeDoc.open();
-      iframeDoc.write(htmlContent);
-      iframeDoc.close();
+  static const Color _slate950 = Color(0xFF020617);
+  static const Color _slate900 = Color(0xFF0F172A);
+  static const Color _slate800 = Color(0xFF1E293B);
+  static const Color _gray200 = Color(0xFFE5E7EB);
+  static const Color _gray300 = Color(0xFFD1D5DB);
+  static const Color _gray400 = Color(0xFF9CA3AF);
+  static const Color _gray600 = Color(0xFF4B5563);
 
-      iframe.onload = () => {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-
-        // Remover iframe después de imprimir
-        setTimeout(() => {
-          if (document.body.contains(iframe)) {
-            document.body.removeChild(iframe);
-          }
-        }, 1000);
-      };
-    } catch (error) {
-      console.error("Error al obtener la vista previa del acta:", error);
-      showNotification("Error al generar el acta para impresión", "error");
-    }
-  };
-
-  //Actualizacion de entregfas
-  const openEditModal = (entregaId) => {
-    const entrega = entregas.find((e) => e.id === entregaId);
-    setEntregaSeleccionada(entrega);
-    setModalOpenUpdate(true);
-  };
-
-  const handleUpdate = (entregaActualizada) => {
-    console.log("Entrega actualizada:", entregaActualizada);
-    // Aquí actualizarías tu estado de entregas
-  };
-
-  //reintegros
-  const abrirModalReintegro = (entregaId) => {
-    setModalOpenReintegro(true);
-    setEntregaIdParaReintegro(entregaId);
-  };
-
-  const getEstadoClase = (estado) => {
-    switch (estado) {
-      case "pendiente":
-        return "bg-yellow-100 text-yellow-800";
-      case "expirada":
-        return "bg-red-100 text-red-800";
-      case "parcialmente_devuelta":
-        return "bg-blue-100 text-blue-800";
-      case "completamente_devuelta":
-        return "bg-green-100 text-green-800";
-      case "YES":
-        return "bg-indigo-100 text-indigo-800";
-      case "":
-      case null:
-      case undefined:
-        return "bg-gray-100 text-gray-500";
-      default:
-        return "bg-gray-200 text-gray-800";
-    }
-  };
-
-  //notificaciones
-  const [notification, setNotification] = useState({
-    message: "",
-    isVisible: false,
-    type: "success",
-  });
-
-  // Función para mostrar notificaciones
-  const showNotification = (message, type = "success") => {
-    setNotification({
-      message,
-      isVisible: true,
-      type,
-    });
-    // Ocultar la notificación después de 5000ms
-    setTimeout(() => {
-      setNotification((prev) => ({ ...prev, isVisible: false }));
-    }, 3000);
-  };
-
-  // Función para cerrar notificación manualmente
-  const closeNotification = () => {
-    setNotification((prev) => ({ ...prev, isVisible: false }));
-  };
-
-  //responsive
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const updateItemsPerPage = () => {
-        if (window.innerWidth >= 1536) {
-          // 2xl
-          setItemsPerPage(10);
-        } else if (window.innerWidth >= 1024) {
-          // lg
-          setItemsPerPage(5);
-        } else if (window.innerWidth >= 640) {
-          // sm
-          setItemsPerPage(5);
-        } else {
-          setItemsPerPage(3);
-        }
-      };
-
-      updateItemsPerPage();
-      window.addEventListener("resize", updateItemsPerPage);
-      return () => window.removeEventListener("resize", updateItemsPerPage);
-    }
-  }, []);
-
-  // Función helper mejorada para manejar valores seguros
-  const safeToLowerCase = (value) => {
-    // Convertir a string si no lo es, y luego a lowercase
-    if (value === null || value === undefined) return "";
-    return String(value).toLowerCase();
-  };
-
-const filterEntregas = useMemo(() => {
-  if (!searchQuery) return Array.isArray(entregas) ? entregas : [];
-  if (!entregas || !Array.isArray(entregas)) return [];
-
-  const lowercaseQuery = searchQuery.toLowerCase();
-  return entregas.filter((entrega) => {
-    if (!entrega) return false;
-
-    // Obtener valores de forma segura
-    const proyecto = safeToLowerCase(entrega.proyecto);
-    const tecnicoNombre = safeToLowerCase(entrega.tecnicoData?.nombre);
-    const almacenistaNombre = safeToLowerCase(entrega.almacenistaData?.nombre);
-
-    return (
-      proyecto.includes(lowercaseQuery) ||
-      tecnicoNombre.includes(lowercaseQuery) ||
-      almacenistaNombre.includes(lowercaseQuery)
-    );
-  });
-}, [searchQuery, entregas]);
-
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = Array.isArray(filterEntregas)
-    ? filterEntregas.slice(indexOfFirstItem, indexOfLastItem)
-    : [];
-
-  // Calcular total de páginas
-  const totalPages = Math.ceil(filterEntregas.length / itemsPerPage);
-
-  // Ajustar la página actual si el número total de páginas cambia
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages > 0 ? totalPages : 1);
-    }
-  }, [totalPages, currentPage]);
-
-  // Función para cambiar de página
-  const paginate = (pageNumber) => {
-    if (pageNumber > 0 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
-    }
-  };
-
-  // Obtener los números de página con lógica adaptable
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxPages = 5; // Máximo de páginas a mostrar
-
-    if (totalPages <= maxPages) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) pages.push(i);
-        pages.push("...");
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1);
-        pages.push("...");
-        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
-      } else {
-        pages.push(1);
-        pages.push("...");
-        pages.push(currentPage - 1);
-        pages.push(currentPage);
-        pages.push(currentPage + 1);
-        pages.push("...");
-        pages.push(totalPages);
-      }
-    }
-    return pages;
-  };
-
-  const abrirModal = () => {
-    setModalOpen(true);
-  };
-
-  const openModalStock = (entrega) => {
-    setModalStock(true);
-    setProductoSeleccionado(entrega);
-  };
-
-  const handleCloseModalStock = () => {
-    setModalStock(false);
-    setProductoSeleccionado(null);
-    getEntregas();
-  };
-
-  const handleCloseModal = () => {
-    setModalOpen(false);
-  };
-
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-    setCurrentPage(1);
-  };
-
-  if (loading) {
-    return <LoadingScreen />;
+  // Método para obtener los elementos del menú con el personalId
+  List<Map<String, dynamic>> get menuItems {
+    return [
+      {
+        'title': 'Materiales',
+        'icon': Icons.route,
+        'route': const ProductSearchView(),
+        'color': Color(0xFF2196F3), // Blue
+      },
+      {
+        'title': 'Entregas',
+        'icon': Icons.assignment,
+        'route': EntregasTecnicoScreen(personalId: widget.personalId), // Usar el personalId recibido
+        'color': Color(0xFFFF9800), // Orange
+      },
+      {
+        'title': 'Mis documentos',
+        'icon': Icons.image,
+        'route': '',
+        'color': Color(0xFF9C27B0), // Purple
+      },
+      {
+        'title': 'Incidencias',
+        'icon': Icons.warning,
+        'route': '',
+        'color': Color(0xFFF44336), // Red
+      },
+    ];
   }
 
-  const handleSubmitReintegro = async (formData) => {
-    try {
-      const response = await fetch("http://172.16.110.74:3004/api/reintegro", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+  // Datos del carrusel
+  final List<Map<String, dynamic>> carouselItems = [
+    {
+      'title': 'Materiales',
+      'subtitle':
+          'Realiza una busqueda rapida de productos disponibles en almacen',
+      'image': 'assets/images/ruta_banner.jpg',
+      'gradient': [Color(0xFF42A5F5), Color(0xFF1976D2)],
+    },
+    {
+      'title': 'Entregas',
+      'subtitle': 'Administra y gestiona tus entregas',
+      'image': 'assets/images/task_banner.jpg',
+      'gradient': [Color(0xFF66BB6A), Color(0xFF388E3C)],
+    },
+    {
+      'title': 'Mis documentos',
+      'subtitle': 'Gestiona tus documentos',
+      'image': 'assets/images/gallery_banner.jpg',
+      'gradient': [Color(0xFFAB47BC), Color(0xFF7B1FA2)],
+    },
+  ];
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Error al crear el reintegro");
-      }
-
-      const result = await response.json();
-      // console.log("Reintegro creado:", result);
-
-      // Mostrar notificación de éxito
-      showNotification("Reintegro creado exitosamente", "success");
-
-      // Refrescar los datos
-      getEntregas();
-    } catch (error) {
-      console.error("Error:", error);
-      showNotification(error.message || "Error al crear el reintegro", "error");
-      throw error; // Re-lanzar el error para que el modal lo maneje
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _mostrarAlerta();
+      _startAutoSlide();
+    });
+    
+    // Debug: imprimir el personalId recibido
+    print('HomeAdmin inicializado con personalId: ${widget.personalId}');
+    if (widget.nombreUsuario != null) {
+      print('Nombre de usuario: ${widget.nombreUsuario}');
     }
-  };
+  }
 
-  return (
-    <div className="relative flex flex-col bg-slate-950 h-full border border-slate-700 rounded-lg ">
-      {notification.isVisible && (
-        <NotificationModal
-          message={notification.message}
-          isVisible={notification.isVisible}
-          type={notification.type}
-          onClose={closeNotification}
-        />
-      )}
+  void _startAutoSlide() {
+    Future.delayed(Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _currentPage = (_currentPage + 1) % carouselItems.length;
+        });
+        _pageController.animateToPage(
+          _currentPage,
+          duration: Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+        _startAutoSlide();
+      }
+    });
+  }
 
-      <nav className="bg-slate-900 border-b border-b-slate-700 flex flex-col md:flex-row items-center justify-between py-3 px-4 gap-3 h-auto md:h-[12%] xl-plus:h-1/10">
-        <div className="relative w-full md:w-1/3 flex items-center">
-          <i className="fa-solid left-3 text-zinc-400 absolute fa-magnifying-glass"></i>
-          <input
-            type="text"
-            placeholder="Buscar..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            className="px-3 pl-10 py-2 border bg-slate-950 border-slate-700 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-slate-500"
-          />
-        </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <button
-            className="bg-yellow-500 px-3 py-2 rounded-lg text-slate-950 flex items-center gap-2 hover:bg-yellow-300 transition w-full md:w-auto justify-center"
-            onClick={() => abrirModal(null)}
-          >
-            <span className="font-medium">Registrar Entrega</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 448 512"
-              className="w-4 h-4 fill-slate-950"
-            >
-              <path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z" />
-            </svg>
-          </button>
-        </div>
-      </nav>
+  void _mostrarAlerta() {
+    Flushbar(
+      padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+      borderColor: _gray300,
+      titleText: const Text(
+        "Inicio",
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.amber
+        ),
+      ),
+      messageText: Text(
+        widget.nombreUsuario != null 
+            ? "Bienvenido, ${widget.nombreUsuario}"
+            : "Bienvenido",
+        style: TextStyle(
+          fontSize: 16,
+          fontFamily: 'RobotoMono',
+          fontWeight: FontWeight.w600,
+          color: Colors.amber,
+        ),
+      ),
+      duration: Duration(seconds: 2),
+      backgroundColor: _slate800,
+      borderRadius: BorderRadius.circular(16),
+      margin: EdgeInsets.all(16),
+      flushbarPosition: FlushbarPosition.TOP,
+    )..show(context);
+  }
 
-      <div className="overflow-x-auto h-[76%] xl-plus:h-8/10 w-full p-6 xl-plus:p-10">
-        {/* Vista de tabla para pantallas medianas y grandes */}
-        <div className="hidden md:block overflow-hidden rounded-lg border border-slate-700">
-          <table className="text-sm text-left text-gray-500 w-full">
-            {/* Encabezado de tabla - mantener igual */}
-            <thead className="text-xs text-gray-400 uppercase bg-slate-900 border-b border-slate-500">
-              <tr>
-                <th className="px-2 py-3 md:px-2 md:py-4 pl-4">
-                  Fecha de Entrega
-                </th>
-                <th className="px-2 py-3 md:px-2 md:py-4 text-center ">
-                  Proyecto
-                </th>
-                <th className="px-2 py-3 md:px-2 md:py-4 text-center">
-                  Entregado a
-                </th>
-                <th className="px-4 py-3 md:px-2 md:py-4 text-center">
-                  Estado
-                </th>
-                <th className="px-2 py-3 md:px-2 md:py-4 text-center">
-                  Confirmado
-                </th>
-                <th className="px-2 py-3 md:px-2 md:py-4 text-center">
-                  Ajustar
-                </th>
-                <th className="px-2 py-3 md:px-2 md:py-4 text-center">Actas</th>
-                <th className="px-2 py-3 md:px-2 md:py-4 text-center">
-                  Reintegro
-                </th>
-              </tr>
-            </thead>
+  // Función para mostrar el perfil
+  void _mostrarPerfil() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: _slate800,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.amber.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header del perfil
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.amber.withOpacity(0.2), Colors.amber.withOpacity(0.1)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: Colors.amber,
+                        child: Icon(
+                          Icons.person,
+                          size: 40,
+                          color: _slate800,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        widget.nombreUsuario ?? 'Usuario',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'ID: ${widget.personalId}',
+                        style: TextStyle(
+                          color: Colors.amber.withOpacity(0.8),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                SizedBox(height: 20),
+                
+                // Opciones del perfil
+                ListTile(
+                  leading: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.settings, color: Colors.blue),
+                  ),
+                  title: Text(
+                    'Configuración',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // Agregar navegación a configuración
+                  },
+                ),
+                
+                ListTile(
+                  leading: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.help, color: Colors.green),
+                  ),
+                  title: Text(
+                    'Ayuda',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // Agregar navegación a ayuda
+                  },
+                ),
+                
+                Divider(color: Colors.grey.withOpacity(0.3)),
+                
+                // Botón de cerrar sesión
+                ListTile(
+                  leading: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.logout, color: Colors.red),
+                  ),
+                  title: Text(
+                    'Cerrar Sesión',
+                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _confirmarCerrarSesion();
+                  },
+                ),
+                
+                SizedBox(height: 10),
+                
+                // Botón cerrar
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Cerrar',
+                    style: TextStyle(color: Colors.amber),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
-            {/* Cuerpo */}
-            <tbody className=" divide-y divide-slate-700">
-              {currentItems.map((entrega) => (
-                <tr className=" border-b border-slate-700" key={entrega.id}>
-                  <td className="px-3 py-1 md:px-2 md:py-4 pl-4">
-                    {entrega.fecha
-                      ? new Date(entrega.fecha).toISOString().split("T")[0]
-                      : "-"}
-                  </td>
+  // Función para confirmar el cierre de sesión
+  void _confirmarCerrarSesion() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: _slate800,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.amber.withOpacity(0.3)),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.warning, color: Colors.orange),
+              SizedBox(width: 10),
+              Text(
+                'Confirmar',
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+          content: Text(
+            '¿Estás seguro de que quieres cerrar sesión?',
+            style: TextStyle(color: Colors.white.withOpacity(0.8)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _cerrarSesion();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Cerrar Sesión',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-                  <td className="px-2 py-1 md:px-2 md:py-1 text-center whitespace-nowrap">
-                    {entrega.proyecto
-                      ? entrega.proyecto.split(" ").slice(0, 2).join(" ") +
-                        (entrega.proyecto.split(" ").length > 3 ? "..." : "")
-                      : "-"}
-                  </td>
+  // Función para cerrar sesión
+  void _cerrarSesion() async {
+    // Mostrar loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: _slate800,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: Colors.amber),
+                SizedBox(height: 16),
+                Text(
+                  'Cerrando sesión...',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
 
-                  <td className="px-2 py-1 md:px-2 md:py-3 text-center whitespace-nowrap">
-                    {entrega.tecnicoData?.nombre || ""}
-                  </td>
-                  <td className="px-2 py-1 md:px-2 md:py-3 text-center">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getEstadoClase(
-                        entrega.estado
-                      )}`}
-                    >
-                      {entrega.estado === "parcialmente_devuelta"
-                        ? "Reintegro parcial"
-                        : entrega.estado === "completamente_devuelta"
-                        ? "Reintegro completo"
-                        : entrega.estado === "pendiente"
-                        ? "Sin reintegro"
-                        : entrega.estado || "Sin estado"}
-                    </span>
-                  </td>
-                  <td className="px-2 py-1 md:px-2 md:py-3 text-center">
-                    <div
-                      className={`inline-block border h-2 w-2 rounded-full ${
-                        entrega.wasConfirmed ? "bg-yellow-500" : ""
-                      }`}
-                    ></div>
-                  </td>
-                  <td className="px-2 py-1 md:px-2 md:py-3 text-center">
-                    <button
-                      onClick={() => openEditModal(entrega.id)}
-                      title="Modificar productos"
-                    >
-                      <i className="fa-solid fa-box-open"></i>
-                    </button>
-                  </td>
+    try {
+      final result = await _authService.logout();
+      
+      Navigator.pop(context); // Cerrar dialog de loading
+      
+      if (result['success']) {
+        // Mostrar mensaje de éxito
+        Flushbar(
+          title: "Sesión cerrada",
+          message: result['mensaje'],
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.green,
+          borderRadius: BorderRadius.circular(16),
+          margin: EdgeInsets.all(16),
+          flushbarPosition: FlushbarPosition.TOP,
+        ).show(context);
 
-                  <td className="px-2 py-1 text-center">
-                    <button
-                      onClick={() => imprimirActa(entrega)}
-                      className="text-xl hover:text-red-500 transition-colors"
-                      title="Generar PDF"
-                    >
-                      <i className="fa-solid fa-file-pdf"></i>
-                    </button>
-                  </td>
-                  <td className="px-2 py-1 text-center">
-                    <button>
-                      <i
-                        onClick={() => {
-                          abrirModalReintegro(entrega.id); // Cambiar aquí: pasar entrega.id en lugar del objeto completo
-                        }}
-                        className="fa-solid fa-repeat"
-                      ></i>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        // Navegar al login después de un breve retraso
+        Future.delayed(Duration(seconds: 1), () {
+          // Navigator.pushReplacementNamed(context, '/login');
+          // O si usas MaterialPageRoute:
+           Navigator.pushReplacement(
+             context,
+             MaterialPageRoute(builder: (context) => login()),
+           );
+        });
+      } else {
+        // Mostrar error
+        Flushbar(
+          title: "Error",
+          message: result['mensaje'],
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.red,
+          borderRadius: BorderRadius.circular(16),
+          margin: EdgeInsets.all(16),
+          flushbarPosition: FlushbarPosition.TOP,
+        ).show(context);
+      }
+    } catch (e) {
+      Navigator.pop(context); // Cerrar dialog de loading
+      print('Error al cerrar sesión: $e');
+      
+      Flushbar(
+        title: "Error",
+        message: "Error inesperado al cerrar sesión",
+        duration: Duration(seconds: 3),
+        backgroundColor: Colors.red,
+        borderRadius: BorderRadius.circular(16),
+        margin: EdgeInsets.all(16),
+        flushbarPosition: FlushbarPosition.TOP,
+      ).show(context);
+    }
+  }
 
-        {/* Vista de tarjetas para móviles */}
-        <div className="md:hidden space-y-4">
-          {currentItems.map((entrega) => (
-            <div
-              key={entrega.id}
-              className="bg-slate-950 p-4 rounded-lg border border-slate-700 shadow-sm"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-medium">
-                  {entrega.proyecto ? entrega.proyecto : "-"}
-                </h3>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleGeneratePDF(entrega)}
-                    className="bg-slate-900 hover:bg-gray-200 p-2 rounded-full"
-                    aria-label="Generar PDF"
-                  >
-                    <i className="fa-solid fa-file-pdf"></i>
-                  </button>
-                  <button
-                    onClick={() => openModalStock(entrega)}
-                    className="bg-slate-900 hover:bg-gray-200 p-2 rounded-full"
-                    aria-label="Reintegro"
-                  >
-                    <i className="fa-solid fa-repeat"></i>
-                  </button>
-                </div>
-              </div>
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
-              <div className="space-y-2 text-sm">
-                <div className="grid grid-cols-3">
-                  <span className="font-medium">Fecha de entrega:</span>
-                  <span className="col-span-2 text-gray-600">
-                    {entrega.fecha
-                      ? new Date(entrega.fecha).toISOString().split("T")[0]
-                      : "-"}
-                  </span>
-                </div>
-                <div className="grid grid-cols-3">
-                  <span className="font-medium">Tecnico:</span>
-                  <span className="col-span-2 text-gray-600">
-                    {entrega.tecnicoData?.nombre || ""}
-                  </span>
-                </div>
-                <div className="grid grid-cols-3">
-                  <span className="font-medium">Almacenista:</span>
-                  <span className="col-span-2 text-gray-600">
-                    {entrega.almacenistaData?.nombre || ""}
-                  </span>
-                </div>
-                <div className="grid grid-cols-3">
-                  <span className="font-medium">Cantidad productos:</span>
-                  <span className="col-span-2 text-gray-600">
-                    {entrega.EntregaProductos?.length || ""}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color(0xFF020618),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Color(0xFF020618),
+        leading: Container(
+          margin: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Color.fromARGB(255, 240, 177, 0).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: const Icon(
+              Icons.settings,
+              color: Color.fromARGB(255, 240, 177, 0),
+            ),
+            onPressed: () {
+              // Configuración
+            },
+          ),
+        ),
+        title: const Text(
+          'Panel de Control',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          Container(
+            margin: EdgeInsets.only(right: 8),
+            child: IconButton(
+              icon: Stack(
+                children: [
+                  Icon(
+                    Icons.notifications_outlined,
+                    color: Colors.amber,
+                    size: 28,
+                  ),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      constraints: BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Text(
+                        '3',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              onPressed: () {
+                // Notificaciones
+              },
+            ),
+          ),
+          Container(
+            margin: EdgeInsets.only(right: 16),
+            child: IconButton(
+              icon: CircleAvatar(
+                radius: 16,
+                backgroundColor: Colors.amber,
+                child: Icon(Icons.person, color: Color(0xFF020618), size: 20),
+              ),
+              onPressed: _mostrarPerfil, // Mostrar vista de perfil
+            ),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
 
-      {/* Contenedor oculto para el acta que será convertido a PDF */}
-      <div style={{ display: "none" }}>
-        <div id="pdf-isolated-content">
-          {entregaSeleccionada && (
-            <ActaPDFAislada entregaSeleccionada={entregaSeleccionada} />
-          )}
-        </div>
-      </div>
+            // CARRUSEL MEJORADO (Aquí está el carrusel que solicitaste)
+            Container(
+              height: 180,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentPage = index;
+                  });
+                },
+                itemCount: carouselItems.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    margin: EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: carouselItems[index]['gradient'],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 15,
+                          spreadRadius: 2,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      children: [
+                        // Patrón de fondo
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              color: Colors.white.withOpacity(0.1),
+                            ),
+                            child: CustomPaint(painter: PatternPainter()),
+                          ),
+                        ),
+                        // Contenido
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                carouselItems[index]['title'],
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  shadows: [
+                                    Shadow(
+                                      blurRadius: 4,
+                                      color: Colors.black.withOpacity(0.3),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                carouselItems[index]['subtitle'],
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Spacer(),
+                              Align(
+                                alignment: Alignment.bottomRight,
+                                child: Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    Icons.arrow_forward,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
 
-      <div className="bg-slate-900 border-t border-t-slate-700 rounded-b-md h-auto py-4 md:h-[12%] xl-plus:h-1/10 flex flex-col md:flex-row items-center justify-center p-2 gap-4 px-4">
-        <Paginacion
-          currentPage={currentPage}
-          totalPages={totalPages}
-          paginate={paginate}
-          getPageNumbers={getPageNumbers}
-        />
-      </div>
+            // Indicadores del carrusel
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(carouselItems.length, (index) {
+                return AnimatedContainer(
+                  duration: Duration(milliseconds: 300),
+                  margin: EdgeInsets.symmetric(horizontal: 4),
+                  width: _currentPage == index ? 24 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: _currentPage == index
+                        ? Color(0xFFFFC107)
+                        : Color(0xFF9E9E9E).withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                );
+              }),
+            ),
 
-      {modalOpen && (
-        <FormularioEntrega
-          showNotification={showNotification}
-          handleCloseModal={handleCloseModal}
-        />
-      )}
+            const SizedBox(height: 30),
 
-      {modalStock && (
-        <FormStock
-          entrega={productoSeleccionado}
-          handleCloseModalStock={handleCloseModalStock}
-          showNotification={showNotification}
-        />
-      )}
+            // Título del menú
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF66BB6A).withOpacity(0.2),
+                      Color(0xFF66BB6A).withOpacity(0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(
+                    color: Color(0xFF66BB6A).withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Color(0xFF66BB6A).withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.dashboard,
+                        color: Color(0xFF2E7D32),
+                        size: 20,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    const Text(
+                      'Menú Principal',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
-      <ModificarProductosModal
-        isOpen={modalOpenUpdate}
-        onClose={() => setModalOpenUpdate(false)}
-        entregaId={entregaSeleccionada?.id}
-        entregaActual={entregaSeleccionada}
-        onUpdate={handleUpdate}
-      />
+            const SizedBox(height: 20),
 
-      {modalOpenReintegro && (
-        <ReintegroModal
-          entrega={entregaIdParaReintegro}
-          isOpen={modalOpenReintegro}
-          onClose={() => {
-            setModalOpenReintegro(false);
-            setEntregaIdParaReintegro(null);
-          }}
-          onSubmit={handleSubmitReintegro}
-        />
-      )}
-    </div>
-  );
+            // Grid del menú mejorado (exactamente 4 elementos)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: 4, // Exactamente 4 elementos
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: 1.2,
+                ),
+                itemBuilder: (context, index) {
+                  final item = menuItems[index]; // Ahora usa el getter que incluye el personalId
+                  return AnimatedContainer(
+                    duration: Duration(milliseconds: 200),
+                    child: InkWell(
+                      onTap: () {
+                        if (item['route'] is Widget) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => item['route'],
+                            ),
+                          );
+                        } else {
+                          print('No hay ruta definida para ${item['title']}');
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Colors.white, Color(0xFFFAFAFA)],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: item['color'].withOpacity(0.2),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: item['color'].withOpacity(0.1),
+                              blurRadius: 12,
+                              spreadRadius: 2,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: item['color'].withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Icon(
+                                item['icon'],
+                                color: item['color'],
+                                size: 32,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              item['title'],
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF424242),
+                                fontSize: 16,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              width: 40,
+                              height: 3,
+                              decoration: BoxDecoration(
+                                color: item['color'].withOpacity(0.6),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 30),
+          ],
+        ),
+      ),
+    );
+  }
 }
+
+// Clase para crear un patrón decorativo en el carrusel
+class PatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.05)
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+
+    // Crear un patrón geométrico simple
+    for (int i = 0; i < 10; i++) {
+      for (int j = 0; j < 10; j++) {
+        final x = (i * size.width / 10);
+        final y = (j * size.height / 10);
+
+        canvas.drawCircle(Offset(x, y), 2, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+
+lo mejor seria realizar un controller, para recepcion y envio de datos al backend, debemos utilizar los mismos colores, y en este home admin agregar el contador real, en este caso no es necesario que vulvas a generar todo solo la porcion de codigo que deberia agregar, cambiar eliminar y donde. 

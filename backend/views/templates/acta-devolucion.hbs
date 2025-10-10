@@ -320,7 +320,7 @@
         text-transform: uppercase;
         }
         .reintegro{
-            border: solid transparent 1px;
+            margin-top: 200px;
         }
 
         .fechaR{
@@ -332,7 +332,7 @@
     </style>
     </head>
 
-    <div class="reintegro">
+    <div class="reintegro ">
          {{!-- <div class="membrete">
             <img src="/imgs/membrete.png">
         </div> --}}
@@ -416,9 +416,21 @@
                                 <th>Cédula:</th>
                             </tr>
                             <tr style="font-size: 14px;">
-                                <td></td>
+                                <td>
+                                    {{#if tecnico.firma_path}}
+                                        <img src="{{tecnico.firma_path}}" 
+                                        alt="Firma del técnico" 
+                                        style="height: 40px; max-width: 150px; padding: 0;" 
+                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                        <div style="display: none; font-size: 12px; color: #999;"></div>
+                                    {{else}}
+                                        <div style="font-size: 12px; color: #999;"></div>
+                                    {{/if}}
+                                </td>
                                 <td>{{almacenista.cedula}}</td>
-                                <td></td>
+                                <td>
+                                    
+                                </td>
                                 <td>{{tecnico.cedula}}</td>
                             </tr>
                         </tbody>

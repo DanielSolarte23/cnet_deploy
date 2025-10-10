@@ -26,7 +26,7 @@ router.get('/entregas/confirmar-entrega/:token', EntregaController.confirmEntreg
 // Rutas para la generación de actas
 router.get("/entregas/:id/acta", ActaController.generarActa);
 router.get("/entregas/:id/acta/preview", ActaController.vistaPrevia);
-
+router.get("/entrega/products/:EntregaId", EntregaController.FindProductsFromADelivery)
 
 // En tu archivo de rutas (por ejemplo, routes/entregas.js)
 router.post('/:entregaId/regenerate-token', EntregaController.regenerateConfirmationToken);

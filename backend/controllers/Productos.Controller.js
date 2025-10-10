@@ -727,9 +727,9 @@ const ProductoController = {
       const unidades = await ProductoUnidad.findAll({
         where: {
           productoId: id,
-          // estado: {
-          //   [Op.in]: ["reintegrado", "nuevo", "usado"],
-          // },
+          estado: {
+            [Op.in]: ["reintegrado", "nuevo", "usado"],
+          },
         },
         include: [
           {

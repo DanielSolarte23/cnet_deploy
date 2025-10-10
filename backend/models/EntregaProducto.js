@@ -24,7 +24,6 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     legalizado: {
-      // NUEVO CAMPO
       type: DataTypes.INTEGER,
       defaultValue: 0,
       validate: {

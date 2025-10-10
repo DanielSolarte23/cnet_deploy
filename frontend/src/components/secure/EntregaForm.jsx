@@ -398,7 +398,7 @@ export default function FormularioEntrega({
         },
       };
 
-      console.log("Datos a enviar:", dataToSend);
+      // console.log("Datos a enviar:", dataToSend);
 
       await createEntrega(dataToSend);
       setSuccess("Entrega creada correctamente");

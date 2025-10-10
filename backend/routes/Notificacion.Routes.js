@@ -1,26 +1,33 @@
-const NotificacionController = require("../controllers/Notificaciones.Controller");
-const express = require("express");
+const express = require('express');
 const router = express.Router();
+const NotificacionController = require('../controllers/Notificaciones.Controller');
 
-// Obtener todas las notificaciones
-router.get("/notificaciones", NotificacionController.findAll);
-// Obtener notificaciones por usuario
-router.get(
-  "/notificaciones/usuario/:usuarioId",
-  NotificacionController.findByUsuario
-);
+// Rutas básicas CRUD
+router.get('/', NotificacionController.findAll);
+router.post('/', NotificacionController.create);
+router.delete('/:id', NotificacionController.delete);
 
-// Crear una nueva notificación
-router.post("/notificaciones", NotificacionController.create);
-// Marcar notificación como leída
-router.put("/notificaciones/:id/leida", NotificacionController.marcarLeida);
+// Rutas específicas por usuario
+router.get('/usuario/:usuarioId', NotificacionController.findByUsuario);
+router.get('/usuario/:usuarioId/count', NotificacionController.getUnreadCountByUsuario);
+router.patch('/usuario/:usuarioId/marcar-todas-leidas', NotificacionController.marcarTodasLeidasUsuario);
 
-// Eliminar una notificación
-router.delete("/notificaciones/:id", NotificacionController.delete);
+// Rutas específicas por personal
+router.get('/personal/:personalId', NotificacionController.findByPersonal);
+router.get('/personal/:personalId/count', NotificacionController.getUnreadCountByPersonal);
+router.patch('/personal/:personalId/marcar-todas-leidas', NotificacionController.marcarTodasLeidasPersonal);
 
-router.put(
-  "/notificaciones/leidas/:usuarioId",
-  NotificacionController.marcarTodasLeidas
-);
+// Rutas de notificación individual
+router.patch('/:id/marcar-leida', NotificacionController.marcarLeida);
+
+// Ruta SSE para conexión en tiempo real
+    router.get('/sse', NotificacionController.sseConnect);
+
+// Ruta para estadísticas SSE (opcional, para debugging)
+router.get('/sse/stats', NotificacionController.getSSEStats);
+
+if (process.env.NODE_ENV !== 'production') {
+  router.post('/test', NotificacionController.testNotification);
+}
 
 module.exports = router;
