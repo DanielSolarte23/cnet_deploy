@@ -8,6 +8,7 @@ const helmet = require("helmet"); // Seguridad adicional
 const compression = require("compression"); // Compresión gzip
 const rateLimit = require("express-rate-limit"); // Rate limiting
 const { sequelize } = require("./models");
+const swaggerDocs = require('./docs/swagger');
 
 // Importar rutas
 const usuarioRoutes = require("./routes/user.Routes");
@@ -243,6 +244,8 @@ app.use("/api", ProductosAsignadosRoutes);
 app.use("/api", LegalizacionesRoutes);
 app.use("/api", CuentasRoutes);
 
+swaggerDocs(app);
+
 // Middleware de manejo de errores 404
 app.use("*", (req, res) => {
   console.log(`404: ${req.method} ${req.originalUrl}`);
@@ -286,24 +289,24 @@ async function startServer() {
   try {
     // Probar conexión a la base de datos
     await sequelize.authenticate();
-    console.log("✅ Conexión a la base de datos establecida correctamente");
+    console.log("Conexión a la base de datos establecida correctamente");
 
     // Sincronizar modelos
     if (NODE_ENV === "development") {
       await sequelize.sync();
-      console.log("✅ Base de datos sincronizada");
+      console.log("Base de datos sincronizada");
     } else {
-      console.log("ℹ️  En producción - usando migraciones existentes");
+      console.log("En producción - usando migraciones existentes");
     }
 
     // Iniciar servidor
     const server = app.listen(PORT, "0.0.0.0", () => {
-      console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
-      console.log(`🌐 Entorno: ${NODE_ENV}`);
+      console.log(`Servidor ejecutándose en puerto ${PORT}`);
+      console.log(`Entorno: ${NODE_ENV}`);
       console.log(
         `📡 Health check disponible en: http://localhost:${PORT}/health`
       );
-      console.log(`🔒 Orígenes CORS permitidos:`, ALLOWED_ORIGINS);
+      console.log(`Orígenes CORS permitidos:`, ALLOWED_ORIGINS);
       console.log(
         `⚡ Rate limiting:`,
         NODE_ENV === "production" ? "ACTIVADO" : "DESACTIVADO"

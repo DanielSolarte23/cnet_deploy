@@ -612,6 +612,8 @@ export default function GestionPage() {
   const [modalDetalleOpen, setModalDetalleOpen] = useState(false);
   const [entregaDetalle, setEntregaDetalle] = useState(null);
 
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
   useEffect(() => {
     getEntregas();
   }, []);
@@ -625,7 +627,7 @@ export default function GestionPage() {
   const imprimirActa = async (entrega) => {
     try {
       const response = await axios.get(
-        `http://172.16.110.74:3004/api/entregas/${entrega.id}/acta/preview`,
+        `${baseUrl}/api/entregas/${entrega.id}/acta/preview` ,
         {
           headers: {
             Accept: "text/html",
@@ -640,7 +642,7 @@ export default function GestionPage() {
       if (!htmlContent.includes("<base")) {
         htmlContent = htmlContent.replace(
           /<head>/i,
-          `<head><base href="http://172.16.110.74:3004">`
+          `<head><base href="${baseUrl}">`
         );
       }
 
@@ -876,7 +878,7 @@ export default function GestionPage() {
 
   const handleSubmitReintegro = async (formData) => {
     try {
-      const response = await fetch("http://172.16.110.74:3004/api/reintegro", {
+      const response = await fetch(`${baseUrl}/api/reintegro`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
