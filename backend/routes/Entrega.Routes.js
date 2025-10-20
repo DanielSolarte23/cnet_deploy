@@ -640,8 +640,14 @@ router.get('/entregas/confirmar-entrega/:token', EntregaController.confirmEntreg
 // Rutas para la generación de actas
 router.get("/entregas/:id/acta", ActaController.generarActa);
 router.get("/entregas/:id/acta/preview", ActaController.vistaPrevia);
+<<<<<<< HEAD
 
 // Regenerar token de confirmación
+=======
+router.get("/entrega/products/:EntregaId", EntregaController.FindProductsFromADelivery)
+
+// En tu archivo de rutas (por ejemplo, routes/entregas.js)
+>>>>>>> b634081f73f866f6ea68bc240a750b8bdf688b4d
 router.post('/:entregaId/regenerate-token', EntregaController.regenerateConfirmationToken);
 
 module.exports = router;

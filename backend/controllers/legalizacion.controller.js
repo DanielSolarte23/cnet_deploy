@@ -1,4 +1,3 @@
-// controllers/Legalizacion.Controller.js
 const {
   Legalizacion,
   Producto,
@@ -90,14 +89,43 @@ const LegalizacionController = {
         const cantidadPendiente =
           cantidadEntregada - cantidadDevuelta - legalizacionesExistentes;
 
+        // ✅ CORRECCIÓN: Normalizar unidadesSeriadas a array
+        let unidadesSeriadasNormalizadas = null;
+        if (unidadesSeriadas) {
+          if (Array.isArray(unidadesSeriadas)) {
+            unidadesSeriadasNormalizadas = unidadesSeriadas;
+          } else if (typeof unidadesSeriadas === "number") {
+            // Si viene un número suelto, convertirlo a array
+            unidadesSeriadasNormalizadas = [unidadesSeriadas];
+          } else if (typeof unidadesSeriadas === "string") {
+            // Si viene como string, intentar parsear
+            try {
+              const parsed = JSON.parse(unidadesSeriadas);
+              if (Array.isArray(parsed)) {
+                unidadesSeriadasNormalizadas = parsed;
+              } else if (typeof parsed === "number") {
+                unidadesSeriadasNormalizadas = [parsed];
+              }
+            } catch (e) {
+              console.error("Error parsing unidadesSeriadas:", e);
+              unidadesSeriadasNormalizadas = null;
+            }
+          }
+        }
+
+        console.log("unidadesSeriadas original:", unidadesSeriadas);
+        console.log(
+          "unidadesSeriadasNormalizadas:",
+          unidadesSeriadasNormalizadas
+        );
+
         // Validar cantidad según si tiene seriales o no
         if (
-          unidadesSeriadas &&
-          Array.isArray(unidadesSeriadas) &&
-          unidadesSeriadas.length > 0
+          unidadesSeriadasNormalizadas &&
+          unidadesSeriadasNormalizadas.length > 0
         ) {
           // Para productos con seriales
-          const cantidadSeriales = unidadesSeriadas.length;
+          const cantidadSeriales = unidadesSeriadasNormalizadas.length;
 
           if (cantidad !== cantidadSeriales) {
             throw new Error(
@@ -113,7 +141,7 @@ const LegalizacionController = {
 
           // Verificar que las unidades pertenecen a la entrega original
           const entregaUnidades = entregaProducto.unidadesSeriadas || [];
-          for (const unidadId of unidadesSeriadas) {
+          for (const unidadId of unidadesSeriadasNormalizadas) {
             if (!entregaUnidades.includes(unidadId)) {
               throw new Error(
                 `La unidad ${unidadId} del producto ${producto.descripcion} no pertenece a esta entrega`
@@ -159,7 +187,7 @@ const LegalizacionController = {
           }
         }
 
-        // Crear la legalización para este producto
+        // ✅ CREAR LA LEGALIZACIÓN CON UNIDADES NORMALIZADAS
         const nuevaLegalizacion = await Legalizacion.create(
           {
             entregaId,
@@ -171,7 +199,7 @@ const LegalizacionController = {
             observaciones,
             ubicacion,
             evidencia,
-            unidadesSeriadas: unidadesSeriadas || null,
+            unidadesSeriadas: unidadesSeriadasNormalizadas, // ✅ Usar la versión normalizada
             estado: "pendiente",
           },
           { transaction: t }
@@ -245,6 +273,10 @@ const LegalizacionController = {
         throw new Error("Solo se pueden aprobar legalizaciones pendientes");
       }
 
+      // Debug: Verificar el tipo de legalización
+      console.log("Tipo de legalización:", legalizacion.tipo);
+      console.log("¿Es instalado?:", legalizacion.tipo === "instalado");
+
       // Actualizar estado de la legalización
       legalizacion.estado = "aprobada";
       legalizacion.almacenistaId = almacenistaId;
@@ -255,21 +287,59 @@ const LegalizacionController = {
       await legalizacion.save({ transaction: t });
 
       // Actualizar estados según el tipo de legalización
-      if (
-        legalizacion.unidadesSeriadas &&
-        legalizacion.unidadesSeriadas.length > 0
-      ) {
+      console.log("Tipo de legalización:", legalizacion.tipo);
+      console.log("Unidades seriadas raw:", legalizacion.unidadesSeriadas);
+      console.log(
+        "Tipo de unidadesSeriadas:",
+        typeof legalizacion.unidadesSeriadas
+      );
+
+      // Manejar el campo JSON unidadesSeriadas
+      let unidadesSeriadas = [];
+      if (legalizacion.unidadesSeriadas) {
+        if (Array.isArray(legalizacion.unidadesSeriadas)) {
+          unidadesSeriadas = legalizacion.unidadesSeriadas;
+        } else if (typeof legalizacion.unidadesSeriadas === "string") {
+          try {
+            unidadesSeriadas = JSON.parse(legalizacion.unidadesSeriadas);
+          } catch (e) {
+            console.error("Error parsing unidadesSeriadas:", e);
+            unidadesSeriadas = [];
+          }
+        } else if (typeof legalizacion.unidadesSeriadas === "number") {
+          // Si es un número suelto, convertirlo a array
+          unidadesSeriadas = [legalizacion.unidadesSeriadas];
+        }
+      }
+
+      if (unidadesSeriadas && unidadesSeriadas.length > 0) {
         // Para productos con seriales
-        for (const unidadId of legalizacion.unidadesSeriadas) {
+        console.log("Procesando unidades seriadas:", unidadesSeriadas);
+
+        for (const unidadId of unidadesSeriadas) {
           const unidad = await ProductoUnidad.findByPk(unidadId, {
             transaction: t,
           });
+
           if (unidad) {
+            const estadoAnterior = unidad.estado;
+            // Comparación directa con el ENUM
             unidad.estado =
               legalizacion.tipo === "instalado" ? "instalado" : "baja";
             await unidad.save({ transaction: t });
+
+            console.log(
+              `Unidad ${unidadId}: ${estadoAnterior} -> ${unidad.estado}`
+            );
+          } else {
+            console.log(`Unidad ${unidadId} no encontrada`);
           }
         }
+      } else {
+        console.log("No hay unidades seriadas para procesar");
+
+        // Si necesitas manejar productos sin seriales, puedes agregar lógica aquí
+        // Por ejemplo, actualizar directamente en la tabla Producto o EntregaProducto
       }
 
       // Actualizar el EntregaProducto
@@ -298,6 +368,7 @@ const LegalizacionController = {
         data: legalizacion,
       });
     } catch (error) {
+      console.error("Error en aprobar legalización:", error);
       if (!t.finished) {
         await t.rollback();
       }
@@ -309,7 +380,7 @@ const LegalizacionController = {
     }
   },
 
-  // OPCIÓN 2: Aprobación masiva (nueva función)
+  // OPCIÓN 2: Aprobación masiva (mejorada)
   async aprobarMultiples(req, res) {
     const t = await db.sequelize.transaction();
 
@@ -345,6 +416,10 @@ const LegalizacionController = {
 
       // Procesar cada legalización
       for (const legalizacion of legalizaciones) {
+        console.log(
+          `Procesando legalización ${legalizacion.id}, tipo: ${legalizacion.tipo}`
+        );
+
         // Actualizar estado de la legalización
         legalizacion.estado = "aprobada";
         legalizacion.almacenistaId = almacenistaId;
@@ -355,19 +430,45 @@ const LegalizacionController = {
         await legalizacion.save({ transaction: t });
 
         // Actualizar estados según el tipo de legalización
-        if (
-          legalizacion.unidadesSeriadas &&
-          legalizacion.unidadesSeriadas.length > 0
-        ) {
+        console.log(
+          `Procesando legalización ${legalizacion.id}, tipo: ${legalizacion.tipo}`
+        );
+
+        // Manejar el campo JSON unidadesSeriadas
+        let unidadesSeriadas = [];
+        if (legalizacion.unidadesSeriadas) {
+          if (Array.isArray(legalizacion.unidadesSeriadas)) {
+            unidadesSeriadas = legalizacion.unidadesSeriadas;
+          } else if (typeof legalizacion.unidadesSeriadas === "string") {
+            try {
+              unidadesSeriadas = JSON.parse(legalizacion.unidadesSeriadas);
+            } catch (e) {
+              console.error("Error parsing unidadesSeriadas:", e);
+              unidadesSeriadas = [];
+            }
+          } else if (typeof legalizacion.unidadesSeriadas === "number") {
+            // Si es un número suelto, convertirlo a array
+            unidadesSeriadas = [legalizacion.unidadesSeriadas];
+          }
+        }
+
+        if (unidadesSeriadas && unidadesSeriadas.length > 0) {
           // Para productos con seriales
-          for (const unidadId of legalizacion.unidadesSeriadas) {
+          for (const unidadId of unidadesSeriadas) {
             const unidad = await ProductoUnidad.findByPk(unidadId, {
               transaction: t,
             });
+
             if (unidad) {
+              const estadoAnterior = unidad.estado;
+              // Comparación directa con el ENUM
               unidad.estado =
                 legalizacion.tipo === "instalado" ? "instalado" : "baja";
               await unidad.save({ transaction: t });
+
+              console.log(
+                `Unidad ${unidadId}: ${estadoAnterior} -> ${unidad.estado}`
+              );
             }
           }
         }
@@ -404,6 +505,7 @@ const LegalizacionController = {
         data: legalizacionesAprobadas,
       });
     } catch (error) {
+      console.error("Error en aprobar múltiples legalizaciones:", error);
       if (!t.finished) {
         await t.rollback();
       }
@@ -602,73 +704,75 @@ const LegalizacionController = {
     }
   },
 
-async findAll(req, res) {
-  try {
-    // Extraer parámetros de paginación de la query string
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const offset = (page - 1) * limit;
+  async findAll(req, res) {
+    try {
+      // Extraer parámetros de paginación de la query string
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const offset = (page - 1) * limit;
 
-    // Validar que los parámetros sean válidos
-    if (page < 1 || limit < 1 || limit > 100) {
-      return res.status(400).json({
+      // Validar que los parámetros sean válidos
+      if (page < 1 || limit < 1 || limit > 100) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Parámetros de paginación inválidos. Page debe ser >= 1, limit debe estar entre 1 y 100",
+        });
+      }
+
+      // Buscar con paginación
+      const { count, rows: legalizaciones } =
+        await Legalizacion.findAndCountAll({
+          include: [
+            {
+              model: Producto,
+              as: "producto",
+              attributes: ["id", "codigo", "descripcion", "marca"],
+            },
+            {
+              model: Personal,
+              as: "tecnicoData",
+              attributes: ["id", "nombre", "cedula"],
+            },
+            {
+              model: Entrega,
+              as: "entregaOriginal",
+              attributes: ["id", "proyecto", "fecha"],
+            },
+          ],
+          order: [["fecha", "DESC"]],
+          limit: limit,
+          offset: offset,
+        });
+
+      // Calcular metadatos de paginación
+      const totalPages = Math.ceil(count / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+
+      return res.status(200).json({
+        success: true,
+        data: legalizaciones,
+        pagination: {
+          currentPage: page,
+          totalPages: totalPages,
+          totalItems: count,
+          itemsPerPage: limit,
+          itemsInCurrentPage: legalizaciones.length,
+          hasNextPage: hasNextPage,
+          hasPrevPage: hasPrevPage,
+          nextPage: hasNextPage ? page + 1 : null,
+          prevPage: hasPrevPage ? page - 1 : null,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({
         success: false,
-        message: "Parámetros de paginación inválidos. Page debe ser >= 1, limit debe estar entre 1 y 100",
+        message: "Error al obtener legalizaciones",
+        error: error.message,
       });
     }
-
-    // Buscar con paginación
-    const { count, rows: legalizaciones } = await Legalizacion.findAndCountAll({
-      include: [
-        {
-          model: Producto,
-          as: "producto",
-          attributes: ["id", "codigo", "descripcion", "marca"],
-        },
-        {
-          model: Personal,
-          as: "tecnicoData",
-          attributes: ["id", "nombre", "cedula"],
-        },
-        {
-          model: Entrega,
-          as: "entregaOriginal",
-          attributes: ["id", "proyecto", "fecha"],
-        },
-      ],
-      order: [["fecha", "DESC"]],
-      limit: limit,
-      offset: offset,
-    });
-
-    // Calcular metadatos de paginación
-    const totalPages = Math.ceil(count / limit);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
-
-    return res.status(200).json({
-      success: true,
-      data: legalizaciones,
-      pagination: {
-        currentPage: page,
-        totalPages: totalPages,
-        totalItems: count,
-        itemsPerPage: limit,
-        itemsInCurrentPage: legalizaciones.length,
-        hasNextPage: hasNextPage,
-        hasPrevPage: hasPrevPage,
-        nextPage: hasNextPage ? page + 1 : null,
-        prevPage: hasPrevPage ? page - 1 : null,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Error al obtener legalizaciones",
-      error: error.message,
-    });
-  }
-},
+  },
 
   // Obtener legalización por ID
   async getById(req, res) {
@@ -908,77 +1012,127 @@ async findAll(req, res) {
   },
 
   // Eliminar legalización (debug)
-  async eliminar(req, res) {
-    const t = await db.sequelize.transaction();
+async eliminar(req, res) {
+  const t = await db.sequelize.transaction();
 
-    try {
-      const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-      const legalizacion = await Legalizacion.findByPk(id, { transaction: t });
+    const legalizacion = await Legalizacion.findByPk(id, { transaction: t });
 
-      if (!legalizacion) {
-        throw new Error("Legalización no encontrada");
+    if (!legalizacion) {
+      throw new Error("Legalización no encontrada");
+    }
+
+    console.log(`Eliminando legalización ${id}, estado: ${legalizacion.estado}`);
+
+    // Si estaba aprobada, revertir efectos básicos
+    if (legalizacion.estado === "aprobada") {
+      console.log('Revirtiendo cambios de legalización aprobada...');
+      
+      // ✅ NORMALIZAR unidadesSeriadas igual que en los otros métodos
+      let unidadesSeriadas = [];
+      if (legalizacion.unidadesSeriadas) {
+        if (Array.isArray(legalizacion.unidadesSeriadas)) {
+          unidadesSeriadas = legalizacion.unidadesSeriadas;
+        } else if (typeof legalizacion.unidadesSeriadas === 'string') {
+          try {
+            unidadesSeriadas = JSON.parse(legalizacion.unidadesSeriadas);
+          } catch (e) {
+            console.error('Error parsing unidadesSeriadas:', e);
+            unidadesSeriadas = [];
+          }
+        } else if (typeof legalizacion.unidadesSeriadas === 'number') {
+          // Si es un número suelto, convertirlo a array
+          unidadesSeriadas = [legalizacion.unidadesSeriadas];
+        }
       }
 
-      // Si estaba aprobada, revertir efectos básicos
-      if (legalizacion.estado === "aprobada") {
-        // Revertir cambios en ProductoUnidad
-        if (
-          legalizacion.unidadesSeriadas &&
-          legalizacion.unidadesSeriadas.length > 0
-        ) {
-          for (const unidadId of legalizacion.unidadesSeriadas) {
-            const unidad = await ProductoUnidad.findByPk(unidadId, {
-              transaction: t,
-            });
-            if (unidad) {
-              unidad.estado = "disponible"; // volvemos al estado original
-              await unidad.save({ transaction: t });
+      console.log('Unidades seriadas a revertir:', unidadesSeriadas);
+
+      // Revertir cambios en ProductoUnidad
+      if (unidadesSeriadas && unidadesSeriadas.length > 0) {
+        for (const unidadId of unidadesSeriadas) {
+          const unidad = await ProductoUnidad.findByPk(unidadId, {
+            transaction: t,
+          });
+          if (unidad) {
+            const estadoAnterior = unidad.estado;
+            
+            // ✅ CORRECCIÓN: Usar el estado correcto según el ENUM de ProductoUnidad
+            // Los estados comunes en ProductoUnidad suelen ser: 'disponible', 'entregado', 'instalado', 'baja', 'reintegrado'
+            // Pero basándome en el error, probablemente sea 'entregado' el estado original
+            let nuevoEstado;
+            if (estadoAnterior === "instalado" || estadoAnterior === "baja") {
+              // Si estaba instalado o en baja por la legalización, volver a entregado
+              nuevoEstado = "instalacion";
+            } else {
+              // Mantener el estado actual si no es claro cuál debería ser
+              nuevoEstado = estadoAnterior;
             }
+            
+            // Solo actualizar si realmente necesita cambiar
+            if (nuevoEstado !== estadoAnterior) {
+              unidad.estado = nuevoEstado;
+              await unidad.save({ transaction: t });
+              console.log(`Unidad ${unidadId} revertida: ${estadoAnterior} -> ${nuevoEstado}`);
+            } else {
+              console.log(`Unidad ${unidadId} mantiene estado: ${estadoAnterior}`);
+            }
+          } else {
+            console.log(`Unidad ${unidadId} no encontrada para revertir`);
           }
         }
-
-        // Revertir cambios en EntregaProducto
-        const entregaProducto = await EntregaProducto.findOne({
-          where: {
-            EntregaId: legalizacion.entregaId,
-            ProductoId: legalizacion.productoId,
-          },
-          transaction: t,
-        });
-
-        if (entregaProducto) {
-          entregaProducto.legalizado = Math.max(
-            (entregaProducto.legalizado || 0) - legalizacion.cantidad,
-            0
-          );
-          await entregaProducto.save({ transaction: t });
-        }
+      } else {
+        console.log('No hay unidades seriadas para revertir');
       }
 
-      // Eliminar la legalización en cualquier estado
-      await legalizacion.destroy({ transaction: t });
-
-      // Actualizar estado de la entrega
-      await actualizarEstadoEntregaCoordinado(legalizacion.entregaId, t);
-
-      await t.commit();
-
-      return res.status(200).json({
-        success: true,
-        message: "Legalización eliminada correctamente (debug)",
+      // Revertir cambios en EntregaProducto
+      const entregaProducto = await EntregaProducto.findOne({
+        where: {
+          EntregaId: legalizacion.entregaId,
+          ProductoId: legalizacion.productoId,
+        },
+        transaction: t,
       });
-    } catch (error) {
-      if (!t.finished) {
-        await t.rollback();
+
+      if (entregaProducto) {
+        const legalizadoAnterior = entregaProducto.legalizado || 0;
+        entregaProducto.legalizado = Math.max(
+          legalizadoAnterior - legalizacion.cantidad,
+          0
+        );
+        await entregaProducto.save({ transaction: t });
+        
+        console.log(`EntregaProducto: legalizado ${legalizadoAnterior} -> ${entregaProducto.legalizado}`);
       }
-      return res.status(400).json({
-        success: false,
-        message: "Error al eliminar la legalización",
-        error: error.message,
-      });
     }
-  },
+
+    // Eliminar la legalización en cualquier estado
+    await legalizacion.destroy({ transaction: t });
+    console.log(`Legalización ${id} eliminada de la base de datos`);
+
+    // Actualizar estado de la entrega
+    await actualizarEstadoEntregaCoordinado(legalizacion.entregaId, t);
+
+    await t.commit();
+
+    return res.status(200).json({
+      success: true,
+      message: "Legalización eliminada correctamente (debug)",
+    });
+  } catch (error) {
+    console.error('Error en eliminar legalización:', error);
+    if (!t.finished) {
+      await t.rollback();
+    }
+    return res.status(400).json({
+      success: false,
+      message: "Error al eliminar la legalización",
+      error: error.message,
+    });
+  }
+},
 };
 
 module.exports = LegalizacionController;

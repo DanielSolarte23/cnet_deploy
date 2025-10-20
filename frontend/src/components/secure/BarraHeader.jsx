@@ -3,7 +3,8 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import NotificacionesModal from "../auth/NotificacionesModal";
+import NotificationsView from "../auth/NotificacionesModal";
+
 
 function BarraHeader({ handleToggle, isOpen, isSmallScreen }) {
   const { logout, user } = useAuth();
@@ -86,7 +87,7 @@ function BarraHeader({ handleToggle, isOpen, isSmallScreen }) {
               <i className="fa-solid fa-bell text-xl"></i>
             </button>
             {modalNotificaciones && (
-              <NotificacionesModal className="absolute top-12 -left-52" />
+              <NotificationsView className="" />
             )}
           </div>
 
@@ -108,9 +109,9 @@ function BarraHeader({ handleToggle, isOpen, isSmallScreen }) {
             <div className="border border-slate-200 dark:border-slate-800 rounded-full p-2 flex justify-center items-center bg-verde">
               <i className="fa-solid fa-user text-xl text-white"></i>
             </div>
-            <span className="text-verde-dos hidden md:block whitespace-nowrap overflow-hidden text-ellipsis max-w-32">
+            {/* <span className="text-verde-dos hidden md:block whitespace-nowrap overflow-hidden text-ellipsis max-w-32">
               {user?.nombre}
-            </span>
+            </span> */}
             <div className="relative">
               <i
                 onClick={handleToggleModal}

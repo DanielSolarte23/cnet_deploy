@@ -19,5 +19,14 @@ module.exports = (sequelize, DataTypes) => {
     },
     firma_path: DataTypes.STRING,
   });
+
+  Personal.associate = (models) => {
+    // Un Personal puede tener muchas Notificaciones
+    Personal.hasMany(models.Notificacion, {
+      foreignKey: "personalId",
+      as: "notificaciones",
+    });
+  };
+
   return Personal;
 };

@@ -60,13 +60,9 @@ const actualizarEstadoEntregaCoordinado = async (
       // Actualizar estado individual del producto
       let estadoProducto;
       if (cantidadProcesada === cantidadTotal) {
-        if (cantidadDevuelta === cantidadTotal) {
-          estadoProducto = "devuelto_completo";
-        } else if (cantidadLegalizada === cantidadTotal) {
-          estadoProducto = "legalizado_completo";
-        } else {
-          estadoProducto = "cerrado"; // Mixto: parte devuelto, parte legalizado
-        }
+        // Si está completamente procesado, siempre es "cerrado"
+        // Sin importar si fue devuelto, legalizado o mixto
+        estadoProducto = "cerrado";
       } else if (cantidadDevuelta > 0 && cantidadLegalizada > 0) {
         estadoProducto = "mixto_parcial"; 
       } else if (cantidadDevuelta > 0) {
@@ -88,18 +84,12 @@ const actualizarEstadoEntregaCoordinado = async (
     let estadoEntrega;
 
     if (todosCerrados) {
-      // Todos los productos están completamente procesados
-      if (todosCompletamenteDevueltos) {
-        estadoEntrega = "completamente_devuelta";
-      } else if (todosCompletateLegalizados) {
-        estadoEntrega = "completamente_legalizada";
-      } else {
-        estadoEntrega = "cerrada"; // Mixto: algunos devueltos, otros legalizados
-      }
+
+      estadoEntrega = "cerrada";
     } else {
       // Hay productos pendientes de procesar
       if (hayParcialDevuelto && hayParcialLegalizado) {
-        estadoEntrega = "mixto_parcial"; // Priorizar devuelto por lógica de negocio
+        estadoEntrega = "mixto_parcial";
       } else if (hayParcialDevuelto) {
         estadoEntrega = "parcialmente_devuelta";
       } else if (hayParcialLegalizado) {

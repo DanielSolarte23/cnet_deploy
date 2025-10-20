@@ -287,7 +287,7 @@ export const ModalUnidadesSeriadas = ({
                   : "bg-red-600 hover:bg-red-700 text-white"
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              {accion === "agregar" ? "Agregar Unidades" : "Quitar Unidades"}
+              {accion === "agregar" ? "Confirmar" : "Confirmar"}
             </button>
           </div>
         </div>

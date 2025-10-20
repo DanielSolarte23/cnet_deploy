@@ -110,26 +110,26 @@ if (NODE_ENV === "production") {
     return limiter(req, res, next);
   });
 } else {
-  console.log("🔧 Rate limiting DESACTIVADO en desarrollo");
+  console.log("Rate limiting DESACTIVADO en desarrollo");
 }
 
 // Configuración de CORS SUPER FLEXIBLE para debugging
 app.use(
   cors({
     origin: function (origin, callback) {
-      console.log(`🔍 CORS: Verificando origen: ${origin}`);
+      console.log(`CORS: Verificando origen: ${origin}`);
 
       // TEMPORAL: Permitir TODOS los orígenes en desarrollo
       if (NODE_ENV === "development") {
         console.log(
-          "✅ CORS: Modo desarrollo - permitiendo TODOS los orígenes"
+          "CORS: Modo desarrollo - permitiendo TODOS los orígenes"
         );
         return callback(null, true);
       }
 
       // Permitir requests sin origen (como mobile apps, Postman, etc.)
       if (!origin) {
-        console.log("✅ CORS: Permitiendo request sin origen");
+        console.log("CORS: Permitiendo request sin origen");
         return callback(null, true);
       }
 
@@ -140,12 +140,12 @@ app.use(
       );
 
       if (isAllowed) {
-        console.log("✅ CORS: Origen permitido");
+        console.log("CORS: Origen permitido");
         callback(null, true);
       } else {
-        console.log(`❌ CORS: Origen no permitido: ${origin}`);
+        console.log(`CORS: Origen no permitido: ${origin}`);
         console.log(
-          `📋 CORS: Orígenes permitidos: ${ALLOWED_ORIGINS.join(", ")}`
+          `CORS: Orígenes permitidos: ${ALLOWED_ORIGINS.join(", ")}`
         );
         callback(null, true); // TEMPORAL: Permitir todos en producción también para debugging
       }
@@ -227,7 +227,7 @@ if (NODE_ENV === "production") {
     return authLimiter(req, res, next);
   });
 } else {
-  console.log("🔧 Auth rate limiting DESACTIVADO en desarrollo");
+  console.log("Auth rate limiting DESACTIVADO en desarrollo");
 }
 
 // Configuración de rutas
@@ -239,7 +239,7 @@ app.use("/api", categoriaRoutes);
 app.use("/api", personalRoutes);
 app.use("/api", EntregaRoutes);
 app.use("/api", ReintegroRoutes);
-app.use("/api", NotificacionRoutes);
+app.use("/api/notificaciones", NotificacionRoutes);
 app.use("/api", ProductosAsignadosRoutes);
 app.use("/api", LegalizacionesRoutes);
 app.use("/api", CuentasRoutes);
@@ -304,33 +304,33 @@ async function startServer() {
       console.log(`Servidor ejecutándose en puerto ${PORT}`);
       console.log(`Entorno: ${NODE_ENV}`);
       console.log(
-        `📡 Health check disponible en: http://localhost:${PORT}/health`
+        `Health check disponible en: http://localhost:${PORT}/health`
       );
       console.log(`Orígenes CORS permitidos:`, ALLOWED_ORIGINS);
       console.log(
-        `⚡ Rate limiting:`,
+        `Rate limiting:`,
         NODE_ENV === "production" ? "ACTIVADO" : "DESACTIVADO"
       );
     });
 
     // Graceful shutdown
     process.on("SIGTERM", () => {
-      console.log("🛑 Recibido SIGTERM, cerrando servidor...");
+      console.log("Recibido SIGTERM, cerrando servidor...");
       server.close(() => {
-        console.log("✅ Servidor cerrado correctamente");
+        console.log("Servidor cerrado correctamente");
         process.exit(0);
       });
     });
 
     process.on("SIGINT", () => {
-      console.log("🛑 Recibido SIGINT, cerrando servidor...");
+      console.log("Recibido SIGINT, cerrando servidor...");
       server.close(() => {
-        console.log("✅ Servidor cerrado correctamente");
+        console.log("Servidor cerrado correctamente");
         process.exit(0);
       });
     });
   } catch (error) {
-    console.error("❌ Error al iniciar el servidor:", error);
+    console.error(" Error al iniciar el servidor:", error);
     process.exit(1);
   }
 }

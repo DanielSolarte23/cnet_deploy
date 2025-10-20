@@ -114,7 +114,7 @@ export default function BarraLateral({ isOpen }) {
     // Para submenús de almacén
     const almacenSubRoutes = {
       modulos: "/secure/administrador/almacen/stants",
-      categorias: "/secure/administrador/almacen/categorias",
+      // categorias: "/secure/administrador/almacen/categorias",
       productos: "/secure/administrador/almacen/productos",
       gestion: "/secure/administrador/almacen/gestion",
       legalizacion: "/secure/administrador/almacen/legalizacion",
@@ -156,18 +156,18 @@ export default function BarraLateral({ isOpen }) {
           key: "modulos",
           href: getMenuRoute("almacen", "modulos"),
         },
-        {
-          icon: "fa-tags",
-          text: "Categorías",
-          key: "categorias",
-          href: getMenuRoute("almacen", "categorias"),
-        },
-        {
-          icon: "fa-box",
-          text: "Productos",
-          key: "productos",
-          href: getMenuRoute("almacen", "productos"),
-        },
+        // {
+        //   icon: "fa-tags",
+        //   text: "Categorías",
+        //   key: "categorias",
+        //   href: getMenuRoute("almacen", "categorias"),
+        // },
+        // {
+        //   icon: "fa-box",
+        //   text: "Productos",
+        //   key: "productos",
+        //   href: getMenuRoute("almacen", "productos"),
+        // },
         {
           icon: "fa-right-left",
           text: "Entregas/Devoluciones",

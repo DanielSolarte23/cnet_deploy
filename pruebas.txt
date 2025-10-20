@@ -407,3 +407,7 @@ aprobar legalizacion
   "observaciones": "Todas las legalizaciones de la entrega 123 aprobadas"
 }
 
+
+http://172.16.110.74:3004/api/productos?page=1&limit=30
+
+http://172.16.110.74:3004/api/legalizacion?page=1&limit=30
