@@ -49,20 +49,20 @@ const CuentasController = {
             continue;
           }
 
-          // Generar email basado en cédula o nombre
-          let email = `${usuario.cedula}@colombianet.com`;
+          // Generar username basado en cédula o nombre
+          let username = `${usuario.cedula}@colombianet.com`;
 
-          // Verificar que el email no exista
+          // Verificar que el username no exista
           let contador = 1;
-          let emailFinal = email;
-          while (await Cuenta.findOne({ where: { email: emailFinal } })) {
+          let emailFinal = username;
+          while (await Cuenta.findOne({ where: { username: emailFinal } })) {
             emailFinal = `${usuario.cedula}_${contador}@colombianet.com`;
             contador++;
           }
 
           // Crear cuenta con contraseña temporal basada en cédula
           await Cuenta.create({
-            email: emailFinal,
+            username: emailFinal,
             password: usuario.cedula, // Contraseña temporal (será hasheada por el hook)
             tipo: "usuario",
             referenciaId: usuario.id,
@@ -108,25 +108,25 @@ const CuentasController = {
             continue;
           }
 
-          // Generar email basado en nombre y apellido o cédula
+          // Generar username basado en nombre y apellido o cédula
           let baseEmail =
             persona.nombre && persona.apellido
               ? `${persona.nombre.toLowerCase()}.${persona.apellido.toLowerCase()}`
               : persona.cedula;
 
-          let email = `${baseEmail}@colombianet.com`;
+          let username = `${baseEmail}@colombianet.com`;
 
-          // Verificar que el email no exista
+          // Verificar que el username no exista
           let contador = 1;
-          let emailFinal = email;
-          while (await Cuenta.findOne({ where: { email: emailFinal } })) {
+          let emailFinal = username;
+          while (await Cuenta.findOne({ where: { username: emailFinal } })) {
             emailFinal = `${baseEmail}_${contador}@colombianet.com`;
             contador++;
           }
 
           // Crear cuenta con contraseña temporal basada en cédula
           await Cuenta.create({
-            email: emailFinal,
+            username: emailFinal,
             password: persona.cedula, // Contraseña temporal (será hasheada por el hook)
             tipo: "personal",
             referenciaId: persona.id,
@@ -170,7 +170,7 @@ const CuentasController = {
 
   async crearIndividual(req, res) {
     try {
-      const { tipo, referenciaId, email, password } = req.body;
+      const { tipo, referenciaId, username, password } = req.body;
 
       // Validaciones
       if (!tipo || !referenciaId) {
@@ -213,14 +213,14 @@ const CuentasController = {
         return res.status(409).json({
           message: "Ya existe una cuenta para este registro",
           cuenta: {
-            email: cuentaExistente.email,
+            username: cuentaExistente.username,
             activo: cuentaExistente.activo,
           },
         });
       }
 
-      // Generar email si no se proporciona
-      let emailFinal = email;
+      // Generar username si no se proporciona
+      let emailFinal = username;
       if (!emailFinal) {
         if (tipo === "usuario") {
           emailFinal = `${registro.cedula}@colombianet.com`;
@@ -232,17 +232,17 @@ const CuentasController = {
         }
       }
 
-      // Verificar que el email no esté en uso
-      const emailEnUso = await Cuenta.findOne({ where: { email: emailFinal } });
+      // Verificar que el username no esté en uso
+      const emailEnUso = await Cuenta.findOne({ where: { username: emailFinal } });
       if (emailEnUso) {
         return res.status(409).json({
-          message: "El email ya está en uso",
+          message: "El username ya está en uso",
         });
       }
 
       // Crear cuenta
       const nuevaCuenta = await Cuenta.create({
-        email: emailFinal,
+        username: emailFinal,
         password: password || registro.cedula, // Usa la contraseña proporcionada o la cédula como temporal
         tipo,
         referenciaId,
@@ -253,7 +253,7 @@ const CuentasController = {
         message: "Cuenta creada exitosamente",
         cuenta: {
           id: nuevaCuenta.id,
-          email: nuevaCuenta.email,
+          username: nuevaCuenta.username,
           tipo: nuevaCuenta.tipo,
           activo: nuevaCuenta.activo,
           referenciaId: nuevaCuenta.referenciaId,

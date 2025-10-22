@@ -6,6 +6,7 @@ const router = express.Router();
 // Rutas para la entidad Entrega
 router.post("/entrega", EntregaController.create); // Crear una nueva entrega
 router.get("/entrega", EntregaController.findAll); // Obtener todas las entregas
+router.get("/entregas/lite", EntregaController.findAllLite); // Obtener todas las entregas
 router.get("/entrega/:id", EntregaController.findOne); // Obtener una entrega por ID
 router.get("/entrega/filtro", EntregaController.findByFilters); // Obtener entregas por filtro
 // router.put('/entregas/:id/productos', EntregaController.updateProductos);

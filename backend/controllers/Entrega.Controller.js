@@ -215,6 +215,50 @@ const EntregaController = {
       });
     }
   },
+
+// Obtener todas las entregas (versión Lite con paginación)
+async findAllLite(req, res) {
+  try {
+    // Obtener parámetros de paginación desde query params
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // Consulta con paginación
+    const { count, rows: entregas } = await Entrega.findAndCountAll({
+      attributes: ['id', 'fecha', 'proyecto', 'estado', 'wasConfirmed'],
+      include: [
+        {
+          model: Personal,
+          as: "tecnicoData",
+          attributes: ["id", "nombre"],
+        },
+      ],
+      order: [["fecha", "DESC"]],
+      limit: limit,
+      offset: offset,
+    });
+
+    // Convertir a JSON simple
+    const entregasLite = entregas.map(entrega => entrega.toJSON());
+
+    return res.status(200).json({
+      success: true,
+      count: entregasLite.length, // Cantidad de registros en esta página
+      totalCount: count, // Total de registros en la BD
+      totalPages: Math.ceil(count / limit), // Total de páginas
+      currentPage: page,
+      data: entregasLite,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener las entregas",
+      error: error.message,
+    });
+  }
+},
+
   // Obtener todas las entregas
   async findAll(req, res) {
     try {

@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useState } from "react";
 
-import { getEntregasRequest, createEntregaRequest } from "../api/entregas";
+import { getEntregasRequest, createEntregaRequest, getEntregaLiteRequest } from "../api/entregas";
 
 const EntregaContext = createContext();
 
@@ -31,6 +31,27 @@ export const EntregaProvider = ({ children }) => {
     }
   };
 
+const getEntregaLite = async (page = 1, limit = 5) => {
+  setLoading(true);
+  try {
+    const response = await getEntregaLiteRequest(page, limit);
+    
+    // Retornar tanto los datos como la metadata de paginación
+    return {
+      data: response.data.data,
+      totalCount: response.data.totalCount,
+      totalPages: response.data.totalPages,
+      currentPage: response.data.currentPage,
+      count: response.data.count
+    };
+  } catch (error) {
+    setError(error);
+    return null;
+  } finally {
+    setLoading(false);
+  }
+};
+
   const createEntrega = async (entrega) => {
     setLoading(true);
     try {
@@ -47,6 +68,7 @@ export const EntregaProvider = ({ children }) => {
     <EntregaContext.Provider
       value={{
         entregas,
+        getEntregaLite,
         entrega,
         setEntrega,
         getEntregas,

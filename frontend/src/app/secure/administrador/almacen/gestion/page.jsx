@@ -1,7 +1,7 @@
 "use client";
 import { ReintegroModal } from "@/components/secure/almacenista/FormReintegro";
 import { ModificarProductosModal } from "@/components/secure/almacenista/UpdateEntregaForm";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import LoadingScreen from "@/components/reutilizables/LoadingScreen";
 import NotificationModal from "@/components/reutilizables/NotificacionModal";
 import Paginacion from "@/components/reutilizables/Paginacion";
@@ -16,22 +16,37 @@ export default function GestionPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
   const [modalStock, setModalStock] = useState(false);
   const [entregaSeleccionada, setEntregaSeleccionada] = useState(null);
   const [modalOpenReintegro, setModalOpenReintegro] = useState(false);
   const [entregaIdParaReintegro, setEntregaIdParaReintegro] = useState(null);
-  const { getEntregas, entregas, loading, error } = useEntregas();
   const [modalOpenUpdate, setModalOpenUpdate] = useState(false);
-
-  // Nuevo estado para el modal de detalles
   const [modalDetalleOpen, setModalDetalleOpen] = useState(false);
   const [entregaDetalle, setEntregaDetalle] = useState(null);
+  
+  // Estados para manejar la paginación del backend
+  const [entregas, setEntregas] = useState([]);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  
+  const { getEntregaLite, loading, error } = useEntregas();
 
+  // Cargar entregas desde el backend con paginación
+  const cargarEntregas = async (page = currentPage) => {
+    const resultado = await getEntregaLite(page, itemsPerPage);
+    if (resultado) {
+      setEntregas(resultado.data);
+      setTotalPages(resultado.totalPages);
+      setTotalCount(resultado.totalCount);
+    }
+  };
+
+  // Cargar entregas cuando cambie la página o itemsPerPage
   useEffect(() => {
-    getEntregas();
-  }, []);
+    cargarEntregas(currentPage);
+  }, [currentPage, itemsPerPage]);
 
   // Nueva función para abrir el modal de detalles
   const abrirModalDetalle = (entrega) => {
@@ -53,7 +68,6 @@ export default function GestionPage() {
 
       let htmlContent = response.data;
 
-      // Agregar base para rutas relativas
       if (!htmlContent.includes("<base")) {
         htmlContent = htmlContent.replace(
           /<head>/i,
@@ -61,7 +75,6 @@ export default function GestionPage() {
         );
       }
 
-      // OPCIÓN 1: Usar iframe oculto (recomendado para impresión directa)
       const iframe = document.createElement("iframe");
       iframe.style.position = "absolute";
       iframe.style.width = "0";
@@ -80,7 +93,6 @@ export default function GestionPage() {
         iframe.contentWindow.focus();
         iframe.contentWindow.print();
 
-        // Remover iframe después de imprimir
         setTimeout(() => {
           if (document.body.contains(iframe)) {
             document.body.removeChild(iframe);
@@ -93,7 +105,6 @@ export default function GestionPage() {
     }
   };
 
-  //Actualizacion de entregfas
   const openEditModal = (entregaId) => {
     const entrega = entregas.find((e) => e.id === entregaId);
     setEntregaSeleccionada(entrega);
@@ -102,10 +113,9 @@ export default function GestionPage() {
 
   const handleUpdate = (entregaActualizada) => {
     console.log("Entrega actualizada:", entregaActualizada);
-    // Aquí actualizarías tu estado de entregas
+    cargarEntregas(currentPage);
   };
 
-  //reintegros
   const abrirModalReintegro = (entregaId) => {
     setModalOpenReintegro(true);
     setEntregaIdParaReintegro(entregaId);
@@ -132,43 +142,36 @@ export default function GestionPage() {
     }
   };
 
-  //notificaciones
   const [notification, setNotification] = useState({
     message: "",
     isVisible: false,
     type: "success",
   });
 
-  // Función para mostrar notificaciones
   const showNotification = (message, type = "success") => {
     setNotification({
       message,
       isVisible: true,
       type,
     });
-    // Ocultar la notificación después de 5000ms
     setTimeout(() => {
       setNotification((prev) => ({ ...prev, isVisible: false }));
     }, 3000);
   };
 
-  // Función para cerrar notificación manualmente
   const closeNotification = () => {
     setNotification((prev) => ({ ...prev, isVisible: false }));
   };
 
-  //responsive
+  // Ajuste responsivo de items por página
   useEffect(() => {
     if (typeof window !== "undefined") {
       const updateItemsPerPage = () => {
         if (window.innerWidth >= 1536) {
-          // 2xl
           setItemsPerPage(10);
         } else if (window.innerWidth >= 1024) {
-          // lg
           setItemsPerPage(5);
         } else if (window.innerWidth >= 640) {
-          // sm
           setItemsPerPage(5);
         } else {
           setItemsPerPage(3);
@@ -181,13 +184,13 @@ export default function GestionPage() {
     }
   }, []);
 
-  // Función helper mejorada para manejar valores seguros
+  // Función helper para manejar valores seguros
   const safeToLowerCase = (value) => {
-    // Convertir a string si no lo es, y luego a lowercase
     if (value === null || value === undefined) return "";
     return String(value).toLowerCase();
   };
 
+  // Filtrado local (opcional - puedes moverlo al backend después)
   const filterEntregas = useMemo(() => {
     if (!searchQuery) return Array.isArray(entregas) ? entregas : [];
     if (!entregas || !Array.isArray(entregas)) return [];
@@ -196,36 +199,15 @@ export default function GestionPage() {
     return entregas.filter((entrega) => {
       if (!entrega) return false;
 
-      // Obtener valores de forma segura
       const proyecto = safeToLowerCase(entrega.proyecto);
       const tecnicoNombre = safeToLowerCase(entrega.tecnicoData?.nombre);
-      const almacenistaNombre = safeToLowerCase(
-        entrega.almacenistaData?.nombre
-      );
 
       return (
         proyecto.includes(lowercaseQuery) ||
-        tecnicoNombre.includes(lowercaseQuery) ||
-        almacenistaNombre.includes(lowercaseQuery)
+        tecnicoNombre.includes(lowercaseQuery)
       );
     });
   }, [searchQuery, entregas]);
-
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = Array.isArray(filterEntregas)
-    ? filterEntregas.slice(indexOfFirstItem, indexOfLastItem)
-    : [];
-
-  // Calcular total de páginas
-  const totalPages = Math.ceil(filterEntregas.length / itemsPerPage);
-
-  // Ajustar la página actual si el número total de páginas cambia
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages > 0 ? totalPages : 1);
-    }
-  }, [totalPages, currentPage]);
 
   // Función para cambiar de página
   const paginate = (pageNumber) => {
@@ -237,7 +219,7 @@ export default function GestionPage() {
   // Obtener los números de página con lógica adaptable
   const getPageNumbers = () => {
     const pages = [];
-    const maxPages = 5; // Máximo de páginas a mostrar
+    const maxPages = 5;
 
     if (totalPages <= maxPages) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
@@ -272,24 +254,26 @@ export default function GestionPage() {
     setProductoSeleccionado(entrega);
   };
 
-    const handleCloseModal = () => {
+  const handleCloseModal = () => {
     setModalOpen(false);
+    cargarEntregas(currentPage);
   };
 
   const handleCloseUpdateProducto = () => {
     setModalOpenUpdate(false);
-    getEntregas();
+    cargarEntregas(currentPage);
   };
 
   const handleCloseModalStock = () => {
     setModalStock(false);
     setProductoSeleccionado(null);
-    getEntregas();
+    cargarEntregas(currentPage);
   };
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
-    setCurrentPage(1);
+    // Si quieres búsqueda en el backend, resetea a página 1
+    // setCurrentPage(1);
   };
 
   if (loading) {
@@ -312,17 +296,12 @@ export default function GestionPage() {
       }
 
       const result = await response.json();
-      // console.log("Reintegro creado:", result);
-
-      // Mostrar notificación de éxito
       showNotification("Reintegro creado exitosamente", "success");
-
-      // Refrescar los datos
-      getEntregas();
+      cargarEntregas(currentPage);
     } catch (error) {
       console.error("Error:", error);
       showNotification(error.message || "Error al crear el reintegro", "error");
-      throw error; // Re-lanzar el error para que el modal lo maneje
+      throw error;
     }
   };
 
@@ -369,7 +348,6 @@ export default function GestionPage() {
         {/* Vista de tabla para pantallas medianas y grandes */}
         <div className="hidden md:block overflow-hidden rounded-lg border border-slate-700">
           <table className="text-sm text-left text-gray-500 w-full">
-            {/* Encabezado de tabla simplificado */}
             <thead className="text-xs text-gray-400 uppercase bg-slate-900 border-b border-slate-500">
               <tr>
                 <th className="px-2 py-3 md:px-2 md:py-4 pl-4 tracking-wider">
@@ -393,9 +371,8 @@ export default function GestionPage() {
               </tr>
             </thead>
 
-            {/* Cuerpo */}
             <tbody className=" divide-y divide-slate-700">
-              {currentItems.map((entrega) => (
+              {filterEntregas.map((entrega) => (
                 <tr className=" border-b border-slate-700" key={entrega.id}>
                   <td className="px-3 py-1 md:px-2 md:py-4 pl-4">
                     {entrega.fecha
@@ -405,7 +382,7 @@ export default function GestionPage() {
 
                   <td
                     className="px-2 py-1 md:px-2 md:py-1 text-center whitespace-nowrap"
-                    title={entrega.proyecto} //
+                    title={entrega.proyecto}
                   >
                     {entrega.proyecto
                       ? entrega.proyecto.split(" ").slice(0, 2).join(" ") +
@@ -455,7 +432,7 @@ export default function GestionPage() {
 
         {/* Vista de tarjetas para móviles */}
         <div className="md:hidden space-y-4">
-          {currentItems.map((entrega) => (
+          {filterEntregas.map((entrega) => (
             <div
               key={entrega.id}
               className="bg-slate-950 p-4 rounded-lg border border-slate-700 shadow-sm"
@@ -490,25 +467,12 @@ export default function GestionPage() {
                     {entrega.tecnicoData?.nombre || ""}
                   </span>
                 </div>
-                <div className="grid grid-cols-3">
-                  <span className="font-medium">Almacenista:</span>
-                  <span className="col-span-2 text-gray-600">
-                    {entrega.almacenistaData?.nombre || ""}
-                  </span>
-                </div>
-                <div className="grid grid-cols-3">
-                  <span className="font-medium">Cantidad productos:</span>
-                  <span className="col-span-2 text-gray-600">
-                    {entrega.EntregaProductos?.length || ""}
-                  </span>
-                </div>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Contenedor oculto para el acta que será convertido a PDF */}
       <div style={{ display: "none" }}>
         <div id="pdf-isolated-content">
           {entregaSeleccionada && (
@@ -526,7 +490,6 @@ export default function GestionPage() {
         />
       </div>
 
-      {/* Modal de Detalles de Entrega */}
       <DetalleEntregaModal
         isOpen={modalDetalleOpen}
         onClose={() => setModalDetalleOpen(false)}
@@ -534,10 +497,7 @@ export default function GestionPage() {
         onEditarProductos={openEditModal}
         onImprimirActa={imprimirActa}
         onReintegro={abrirModalReintegro}
-        onReenviarConfirmacion={(entregaId, email) => {
-          // Esta función ya está implementada dentro del modal
-          // console.log("Reenviar confirmación para:", entregaId, email);
-        }}
+        onReenviarConfirmacion={(entregaId, email) => {}}
       />
 
       {modalOpen && (
