@@ -17,6 +17,8 @@ export const DetalleEntregaModal = ({
   const [emailConfirmacion, setEmailConfirmacion] = useState("");
   const [enviandoEmail, setEnviandoEmail] = useState(false);
 
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
   useEffect(() => {
     if (isOpen && entrega) {
       obtenerDetalleEntrega();
@@ -27,7 +29,7 @@ export const DetalleEntregaModal = ({
     setLoadingDetalle(true);
     try {
       const response = await axios.get(
-        `http://172.16.110.74:3004/api/entrega/${entrega.id}`
+        `${baseUrl}/api/entrega/${entrega.id}`
       );
       setDetalleEntrega(response.data.data);
       // Pre-llenar el email del técnico si está disponible
@@ -50,7 +52,7 @@ export const DetalleEntregaModal = ({
     setEnviandoEmail(true);
     try {
       const response = await axios.post(
-        `http://172.16.110.74:3004/api/${entrega.id}/regenerate-token`,
+        `${baseUrl}/api/${entrega.id}/regenerate-token`,
         { recipientEmail: emailConfirmacion }
       );
       alert("Confirmación reenviada exitosamente");

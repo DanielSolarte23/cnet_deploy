@@ -33,6 +33,7 @@ export default function GestionPage() {
   
   const { getEntregaLite, loading, error } = useEntregas();
 
+<<<<<<< HEAD
   // Cargar entregas desde el backend con paginación
   const cargarEntregas = async (page = currentPage) => {
     const resultado = await getEntregaLite(page, itemsPerPage);
@@ -44,6 +45,10 @@ export default function GestionPage() {
   };
 
   // Cargar entregas cuando cambie la página o itemsPerPage
+=======
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+>>>>>>> a1bb8100e6f463a7e5ff5cb10b46ce4bdc7942b8
   useEffect(() => {
     cargarEntregas(currentPage);
   }, [currentPage, itemsPerPage]);
@@ -57,7 +62,7 @@ export default function GestionPage() {
   const imprimirActa = async (entrega) => {
     try {
       const response = await axios.get(
-        `http://172.16.110.74:3004/api/entregas/${entrega.id}/acta/preview`,
+        `${baseUrl}/api/entregas/${entrega.id}/acta/preview` ,
         {
           headers: {
             Accept: "text/html",
@@ -71,7 +76,7 @@ export default function GestionPage() {
       if (!htmlContent.includes("<base")) {
         htmlContent = htmlContent.replace(
           /<head>/i,
-          `<head><base href="http://172.16.110.74:3004">`
+          `<head><base href="${baseUrl}">`
         );
       }
 
@@ -282,7 +287,7 @@ export default function GestionPage() {
 
   const handleSubmitReintegro = async (formData) => {
     try {
-      const response = await fetch("http://172.16.110.74:3004/api/reintegro", {
+      const response = await fetch(`${baseUrl}/api/reintegro`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

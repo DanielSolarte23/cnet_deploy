@@ -8,6 +8,7 @@ const helmet = require("helmet"); // Seguridad adicional
 const compression = require("compression"); // Compresión gzip
 const rateLimit = require("express-rate-limit"); // Rate limiting
 const { sequelize } = require("./models");
+const swaggerDocs = require('./docs/swagger');
 
 // Importar rutas
 const usuarioRoutes = require("./routes/user.Routes");
@@ -242,6 +243,8 @@ app.use("/api/notificaciones", NotificacionRoutes);
 app.use("/api", ProductosAsignadosRoutes);
 app.use("/api", LegalizacionesRoutes);
 app.use("/api", CuentasRoutes);
+
+swaggerDocs(app);
 
 // Middleware de manejo de errores 404
 app.use("*", (req, res) => {
